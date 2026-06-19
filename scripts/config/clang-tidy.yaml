@@ -1,0 +1,11 @@
+Checks: >
+  bugprone-*,
+  clang-analyzer-*,
+  performance-*,
+  portability-*
+
+WarningsAsErrors: 'bugprone-*,clang-analyzer-*'
+
+HeaderFilterRegex: 'firmware/(core|services)/.*'
+
+FormatStyle: none

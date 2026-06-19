@@ -1,0 +1,34 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "MCU Debug (J-Link)",
+
+            "cwd": "${workspaceRoot}",
+
+            "executable": "${workspaceRoot}/build/build_firmware/firmware.elf",
+
+            "request": "launch",
+
+            "type": "cortex-debug",
+
+            "servertype": "jlink",
+
+            "device": "${config:firmware.device}",
+
+            "interface": "swd",
+
+            "runToEntryPoint": "main",
+
+            "gdbPath": "/usr/bin/gdb-multiarch",
+
+            "preLaunchTask": "Build Firmware",
+
+            "svdFile": "${workspaceRoot}/debug/MK22F51212.xml",
+
+            "showDevDebugOutput": "raw",
+
+            "postRestartCommands": ["monitor reset"]
+        }
+    ]
+}
