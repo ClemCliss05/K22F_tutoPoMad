@@ -20,8 +20,8 @@ file(GLOB CMSIS_SOURCES
 
 target_sources(platform_mk22fn512 PRIVATE
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/clock.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/interrupt.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/platform_drivers/clock/clock.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/platform_drivers/interrupt/interrupt.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/startup/startup_MK22FN512.cpp
 
@@ -33,6 +33,9 @@ target_sources(platform_mk22fn512 PRIVATE
 # ------------------------------------------------------------------------------
 
 target_include_directories(platform_mk22fn512 PUBLIC
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/platform_drivers/clock
+    ${CMAKE_CURRENT_SOURCE_DIR}/platform_drivers/interrupt
 
     ${CMAKE_CURRENT_SOURCE_DIR}/cmsis/core
     ${CMAKE_CURRENT_SOURCE_DIR}/cmsis/device/inc

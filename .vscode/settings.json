@@ -1,4 +1,5 @@
 {
     "firmware.device": "MK22FN512XXX12",
-    "C_Cpp.default.compileCommands": "${workspaceFolder}/build/build_firmware/compile_commands.json"
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/build/build_firmware/compile_commands.json",
+    "cortex-debug.variableUseNaturalFormat": true
 }

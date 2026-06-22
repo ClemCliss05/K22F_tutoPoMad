@@ -1,7 +1,11 @@
 #include "MK22FN512.h"
+#include "clock.hpp"
 
 int main()
 {
+    Platform::Clock::initOSC();
+    Platform::Clock::set120MHz();
+
     // Enable clock for PORTA & PORTD
     SIM->SCGC5 |= SIM_SCGC5_PORTA_MASK | SIM_SCGC5_PORTD_MASK;
 
