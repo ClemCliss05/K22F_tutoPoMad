@@ -2,7 +2,10 @@
 
 #include "logger_backend.hpp"
 
-class UartLoggerBackend : public LoggerBackend {
-  public:
-    void write(char c) override;
-};
+namespace Drivers::Uart
+{
+    class UartLoggerBackend : public LoggerBackend {
+      public:
+        void write(char c) override;
+    };
+}

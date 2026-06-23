@@ -1,5 +1,9 @@
 #pragma once
 
-void uart_init();
+#include <cstdint>
 
-void uart_write_byte(char c);
+namespace Drivers::Uart
+{
+    void BSP_Uart_Init(void);
+    void BSP_Uart_Write_Byte(char c);
+}

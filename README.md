@@ -1,13 +1,8 @@
-# MK22FN512 Firmware Template
+# MK22FN512 tuto PoMad (https://www.pomad.fr/)
 
-A modern firmware template for NXP microcontrollers focused on:
-
-- Modular architecture
-- Hardware abstraction
-- Host-based testing
-- Static analysis
-- Security checks
-- CI/CD automation
+A modern tuto for MK22FN512 microcontrollers focused on learning how to use an MCU.
+The tuto PoMad is adapted for STM32 MCU but this git is designed for MK22FN512 NXP MCU.
+Go through the diferent commit in order to understand each steps of the tuto.
 
 ---
 
