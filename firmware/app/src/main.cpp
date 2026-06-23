@@ -4,6 +4,7 @@
 int main()
 {
     Drivers::GPIO::BSP_LED_Init();
+    Drivers::GPIO::BSP_PBs_Init();
     Drivers::GPIO::BSP_LED_On();
     for (volatile uint32_t i = 0; i < 5000000; i++);
     Drivers::GPIO::BSP_LED_Off();
