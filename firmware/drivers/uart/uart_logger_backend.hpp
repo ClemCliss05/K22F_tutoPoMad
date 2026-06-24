@@ -1,11 +1,14 @@
 #pragma once
 
 #include "logger_backend.hpp"
+#include "uart.hpp"
 
-namespace Drivers::Uart
-{
-    class UartLoggerBackend : public LoggerBackend {
-      public:
-        void write(char c) override;
-    };
-}
+class UartLoggerBackend : public ILoggerBackend {
+  public:
+    explicit UartLoggerBackend(Drivers::Uart &uart);
+
+    void write(char c) override;
+
+  private:
+    Drivers::Uart &uart_;
+};

@@ -1,32 +1,29 @@
 #include "clock.hpp"
 #include "gpio.hpp"
 
-int main()
-{
-    Drivers::GPIO::BSP_LED_Init();
-    Drivers::GPIO::BSP_PBs_Init();
-    Drivers::GPIO::BSP_LED_On();
-    for (volatile uint32_t i = 0; i < 5000000; i++);
-    Drivers::GPIO::BSP_LED_Off();
+int main() {
+    Bsp::Clock clock;
+    clock.initOSC();
+    clock.set48MHz();
 
-    while (1)
-    {
-        if(Drivers::GPIO::BSP_PB1_GetState())
-        {
-            Drivers::GPIO::BSP_LED_On(Drivers::GPIO::LED_GREEN);
-        }
-        else
-        {
-            Drivers::GPIO::BSP_LED_Off(Drivers::GPIO::LED_GREEN);
+    Drivers::Gpio::LED_Init();
+    Drivers::Gpio::PBs_Init();
+    Drivers::Gpio::LED_On();
+    for (volatile uint32_t i = 0; i < 5000000; i++)
+        ;
+    Drivers::Gpio::LED_Off();
+
+    while (1) {
+        if (Drivers::Gpio::PB1_GetState()) {
+            Drivers::Gpio::LED_On(Drivers::Gpio::LED_GREEN);
+        } else {
+            Drivers::Gpio::LED_Off(Drivers::Gpio::LED_GREEN);
         }
 
-        if(Drivers::GPIO::BSP_PB2_GetState())
-        {
-            Drivers::GPIO::BSP_LED_On(Drivers::GPIO::LED_BLUE);
-        }
-        else
-        {
-            Drivers::GPIO::BSP_LED_Off(Drivers::GPIO::LED_BLUE);
+        if (Drivers::Gpio::PB2_GetState()) {
+            Drivers::Gpio::LED_On(Drivers::Gpio::LED_BLUE);
+        } else {
+            Drivers::Gpio::LED_Off(Drivers::Gpio::LED_BLUE);
         }
     }
 }

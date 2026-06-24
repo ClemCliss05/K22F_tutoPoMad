@@ -14,7 +14,7 @@
 
 class Logger {
   public:
-    Logger(RingBuffer &buffer, LoggerBackend &backend);
+    Logger(RingBuffer &buffer, ILoggerBackend &backend);
 
     void log(const char *msg);
 
@@ -22,25 +22,47 @@ class Logger {
 
   private:
     RingBuffer &buffer_;
-    LoggerBackend &backend_;
+    ILoggerBackend &backend_;
 };
 
 extern Logger *global_logger;
 
 #if LOG_LEVEL >= LOG_LEVEL_ERROR
-#define LOG_ERROR(msg) global_logger->log(msg)
+#define LOG_ERROR(msg)                                                                             \
+    do {                                                                                           \
+        if (global_logger)                                                                         \
+            global_logger->log(msg);                                                               \
+    } while (0)
 #else
 #define LOG_ERROR(msg)
 #endif
 
+#if LOG_LEVEL >= LOG_LEVEL_WARN
+#define LOG_WARN(msg)                                                                              \
+    do {                                                                                           \
+        if (global_logger)                                                                         \
+            global_logger->log(msg);                                                               \
+    } while (0)
+#else
+#define LOG_WARN(msg)
+#endif
+
 #if LOG_LEVEL >= LOG_LEVEL_INFO
-#define LOG_INFO(msg) global_logger->log(msg)
+#define LOG_INFO(msg)                                                                              \
+    do {                                                                                           \
+        if (global_logger)                                                                         \
+            global_logger->log(msg);                                                               \
+    } while (0)
 #else
 #define LOG_INFO(msg)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_DEBUG
-#define LOG_DEBUG(msg) global_logger->log(msg)
+#define LOG_DEBUG(msg)                                                                             \
+    do {                                                                                           \
+        if (global_logger)                                                                         \
+            global_logger->log(msg);                                                               \
+    } while (0)
 #else
 #define LOG_DEBUG(msg)
 #endif

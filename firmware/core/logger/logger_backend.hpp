@@ -1,10 +1,8 @@
 #pragma once
 
-#include <cstddef>
-
-class LoggerBackend {
+class ILoggerBackend {
   public:
-    virtual ~LoggerBackend() = default;
+    virtual ~ILoggerBackend() = default;
 
     virtual void write(char c) = 0;
 };

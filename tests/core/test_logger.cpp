@@ -6,7 +6,7 @@
 
 #include <string>
 
-class FakeBackend : public LoggerBackend {
+class FakeBackend : public ILoggerBackend {
   public:
     std::string out;
 
@@ -18,7 +18,7 @@ class FakeBackend : public LoggerBackend {
 TEST(LoggerTest, LogMessage) {
     char mem[64];
 
-    RingBuffer rb(mem, 64);
+    RingBuffer rb(mem, sizeof(mem));
 
     FakeBackend backend;
 

@@ -1,9 +1,21 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
-namespace Drivers::Uart
-{
-    void BSP_Uart_Init(void);
-    void BSP_Uart_Write_Byte(char c);
-}
+namespace Drivers {
+class Uart {
+  public:
+    void init();
+
+    bool isTxReady() const;
+    bool isRxReady() const;
+
+    void writeByte(uint8_t byte);
+    void write(const uint8_t *data, std::size_t length);
+
+    uint8_t readByte();
+
+  private:
+};
+} // namespace Drivers
