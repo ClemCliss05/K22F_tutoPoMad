@@ -5,17 +5,17 @@
 
 namespace Drivers {
 class Uart {
-  public:
-    void init();
+    public:
+        void init();
 
-    bool isTxReady() const;
-    bool isRxReady() const;
+        bool isTxReady() const;
+        bool isRxReady() const;
 
-    void writeByte(uint8_t byte);
-    void write(const uint8_t *data, std::size_t length);
+        void writeByte(uint8_t byte);
+        void write(const uint8_t *data, std::size_t length);
 
-    uint8_t readByte();
+        uint8_t readByte();
 
-  private:
+    private:
 };
 } // namespace Drivers

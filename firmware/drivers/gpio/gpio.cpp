@@ -32,26 +32,26 @@ void Drivers::Gpio::LED_On(void) {
     GPIOA->PCOR = (0b1 << 1);
 }
 
-void Drivers::Gpio::LED_On(uint8_t color) {
+void Drivers::Gpio::LED_On(LedColor color) {
     switch (color) {
-    case LED_RED:
+    case Drivers::Gpio::LedColor::Red:
         GPIOA->PCOR = (0b1 << 1);
         break;
-    case LED_GREEN:
+    case Drivers::Gpio::LedColor::Green:
         GPIOA->PCOR = (0b1 << 2);
         break;
-    case LED_BLUE:
+    case Drivers::Gpio::LedColor::Blue:
         GPIOD->PCOR = (0b1 << 5);
         break;
-    case LED_CYAN:
+    case Drivers::Gpio::LedColor::Cyan:
         GPIOA->PCOR = (0b1 << 2);
         GPIOD->PCOR = (0b1 << 5);
         break;
-    case LED_YELLOW:
+    case Drivers::Gpio::LedColor::Yellow:
         GPIOA->PCOR = (0b1 << 1);
         GPIOA->PCOR = (0b1 << 2);
         break;
-    case LED_MAGENTA:
+    case Drivers::Gpio::LedColor::Magenta:
         GPIOA->PCOR = (0b1 << 1);
         GPIOD->PCOR = (0b1 << 5);
         break;
@@ -67,26 +67,26 @@ void Drivers::Gpio::LED_Off(void) {
     GPIOA->PSOR = (0b1 << 1);
 }
 
-void Drivers::Gpio::LED_Off(uint8_t color) {
+void Drivers::Gpio::LED_Off(LedColor color) {
     switch (color) {
-    case LED_RED:
+    case Drivers::Gpio::LedColor::Red:
         GPIOA->PSOR = (0b1 << 1);
         break;
-    case LED_GREEN:
+    case Drivers::Gpio::LedColor::Green:
         GPIOA->PSOR = (0b1 << 2);
         break;
-    case LED_BLUE:
+    case Drivers::Gpio::LedColor::Blue:
         GPIOD->PSOR = (0b1 << 5);
         break;
-    case LED_CYAN:
+    case Drivers::Gpio::LedColor::Cyan:
         GPIOA->PSOR = (0b1 << 2);
         GPIOD->PSOR = (0b1 << 5);
         break;
-    case LED_YELLOW:
+    case Drivers::Gpio::LedColor::Yellow:
         GPIOA->PSOR = (0b1 << 1);
         GPIOA->PSOR = (0b1 << 2);
         break;
-    case LED_MAGENTA:
+    case Drivers::Gpio::LedColor::Magenta:
         GPIOA->PSOR = (0b1 << 1);
         GPIOD->PSOR = (0b1 << 5);
         break;
@@ -102,26 +102,26 @@ void Drivers::Gpio::LED_Toggle(void) {
     GPIOA->PTOR = (0b1 << 1);
 }
 
-void Drivers::Gpio::LED_Toggle(uint8_t color) {
+void Drivers::Gpio::LED_Toggle(LedColor color) {
     switch (color) {
-    case LED_RED:
+    case Drivers::Gpio::LedColor::Red:
         GPIOA->PTOR = (0b1 << 1);
         break;
-    case LED_GREEN:
+    case Drivers::Gpio::LedColor::Green:
         GPIOA->PTOR = (0b1 << 2);
         break;
-    case LED_BLUE:
+    case Drivers::Gpio::LedColor::Blue:
         GPIOD->PTOR = (0b1 << 5);
         break;
-    case LED_CYAN:
+    case Drivers::Gpio::LedColor::Cyan:
         GPIOA->PTOR = (0b1 << 2);
         GPIOD->PTOR = (0b1 << 5);
         break;
-    case LED_YELLOW:
+    case Drivers::Gpio::LedColor::Yellow:
         GPIOA->PTOR = (0b1 << 1);
         GPIOA->PTOR = (0b1 << 2);
         break;
-    case LED_MAGENTA:
+    case Drivers::Gpio::LedColor::Magenta:
         GPIOA->PTOR = (0b1 << 1);
         GPIOD->PTOR = (0b1 << 5);
         break;
