@@ -8,6 +8,7 @@ add_library(core STATIC)
 target_sources(core PRIVATE
 
     logger/logger.cpp
+
     ringbuffer/ringbuffer.cpp
 )
 

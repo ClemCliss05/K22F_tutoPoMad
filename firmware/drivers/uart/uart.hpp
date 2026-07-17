@@ -1,5 +1,21 @@
 #pragma once
 
-void uart_init();
+#include <cstddef>
+#include <cstdint>
 
-void uart_write_byte(char c);
+namespace Drivers {
+class Uart {
+    public:
+        void init();
+
+        bool isTxReady() const;
+        bool isRxReady() const;
+
+        void writeByte(uint8_t byte);
+        void write(const char *str);
+
+        uint8_t readByte();
+
+    private:
+};
+} // namespace Drivers

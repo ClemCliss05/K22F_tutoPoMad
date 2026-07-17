@@ -2,34 +2,39 @@
 
 #include <cstdint>
 
-namespace Drivers::GPIO
-{
-    /*
-    * LED driver functions
-    */
+namespace Drivers {
+class Gpio {
+    public:
+        /*
+        * LED driver functions
+        */
 
-    constexpr uint8_t LED_RED = 0x00;
-    constexpr uint8_t LED_GREEN = 0x01;
-    constexpr uint8_t LED_BLUE = 0x02;
-    constexpr uint8_t LED_CYAN = 0x03;
-    constexpr uint8_t LED_YELLOW = 0x04;
-    constexpr uint8_t LED_MAGENTA = 0x05;
-    constexpr uint8_t LED_WHITE = 0x06;
+        enum class LedColor : uint8_t
+        {
+            Red,
+            Green,
+            Blue,
+            Cyan,
+            Yellow,
+            Magenta,
+            White
+        };
 
-    void	BSP_LED_Init	(void);
-    void	BSP_LED_On	    (void);
-    void	BSP_LED_On	    (uint8_t color);
-    void	BSP_LED_Off	    (void);
-    void	BSP_LED_Off	    (uint8_t color);
-    void	BSP_LED_Toggle	(void);
-    void	BSP_LED_Toggle	(uint8_t color);
+        void LED_Init(void);
+        void LED_On(void);
+        void LED_On(LedColor color);
+        void LED_Off(void);
+        void LED_Off(LedColor color);
+        void LED_Toggle(void);
+        void LED_Toggle(LedColor color);
 
+        /*
+        * Push Button driver functions
+        */
 
-    /*
-    * Push Button driver functions
-    */
-
-    void BSP_PBs_Init(void);
-    bool BSP_PB1_GetState(void);
-    bool BSP_PB2_GetState(void);
-}
+        void PBs_Init(void);
+        bool PB1_GetState(void);
+        bool PB2_GetState(void);
+    private:
+};
+} // namespace Drivers

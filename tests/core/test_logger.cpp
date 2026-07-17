@@ -6,7 +6,7 @@
 
 #include <string>
 
-class FakeBackend : public LoggerBackend {
+class FakeBackend : public ILoggerBackend {
   public:
     std::string out;
 
@@ -18,15 +18,42 @@ class FakeBackend : public LoggerBackend {
 TEST(LoggerTest, LogMessage) {
     char mem[64];
 
-    RingBuffer rb(mem, 64);
+    RingBuffer rb(mem, sizeof(mem));
 
     FakeBackend backend;
 
     Logger logger(rb, backend);
 
-    logger.log("hello");
+    logger.log(LogLevel::Debug,"hello");
 
-    logger.flush();
+    EXPECT_EQ( backend.out, "[DEBUG] hello\r\n");
+}
 
-    EXPECT_EQ(backend.out, "hello");
+TEST(LoggerTest, FormatInteger) {
+    char mem[64];
+
+    RingBuffer rb(mem, sizeof(mem));
+
+    FakeBackend backend;
+
+    Logger logger(rb, backend);
+
+    logger.log(LogLevel::Debug, "Counter=%d", 42);
+
+    EXPECT_EQ( backend.out, "[DEBUG] Counter=42\r\n");
+}
+
+TEST(LoggerTest, MultipleMessages) {
+    char mem[64];
+
+    RingBuffer rb(mem, sizeof(mem));
+
+    FakeBackend backend;
+
+    Logger logger(rb, backend);
+
+    logger.log(LogLevel::Debug, "Hello");
+    logger.log(LogLevel::Debug, "World");
+
+    EXPECT_EQ( backend.out, "[DEBUG] Hello\r\n" "[DEBUG] World\r\n");
 }

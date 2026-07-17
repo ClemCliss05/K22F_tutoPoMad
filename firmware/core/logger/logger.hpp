@@ -1,11 +1,20 @@
 #pragma once
 
+#include <cstdint>
+
 #include "logger_backend.hpp"
 #include "ringbuffer.hpp"
 
+enum class LogLevel : std::uint8_t {
+    Error,
+    Warn,
+    Info,
+    Debug
+};
+
 #define LOG_LEVEL_ERROR 0
-#define LOG_LEVEL_WARN 1
-#define LOG_LEVEL_INFO 2
+#define LOG_LEVEL_WARN  1
+#define LOG_LEVEL_INFO  2
 #define LOG_LEVEL_DEBUG 3
 
 #ifndef LOG_LEVEL
@@ -14,33 +23,70 @@
 
 class Logger {
   public:
-    Logger(RingBuffer &buffer, LoggerBackend &backend);
+    Logger(RingBuffer &buffer, ILoggerBackend &backend);
 
-    void log(const char *msg);
-
-    void flush();
+    void log(LogLevel level,
+             const char* fmt,
+             ...);
 
   private:
+    void writePrefix(LogLevel level);
+    void flush();
+
     RingBuffer &buffer_;
-    LoggerBackend &backend_;
+    ILoggerBackend &backend_;
 };
 
 extern Logger *global_logger;
 
 #if LOG_LEVEL >= LOG_LEVEL_ERROR
-#define LOG_ERROR(msg) global_logger->log(msg)
+#define LOG_ERROR(...)                                \
+    do                                                \
+    {                                                 \
+        if(global_logger)                             \
+            global_logger->log(                       \
+                LogLevel::Error,                      \
+                __VA_ARGS__);                         \
+    } while(0)
 #else
-#define LOG_ERROR(msg)
+#define LOG_ERROR(...)
+#endif
+
+#if LOG_LEVEL >= LOG_LEVEL_WARN
+#define LOG_WARN(...)                                 \
+    do                                                \
+    {                                                 \
+        if(global_logger)                             \
+            global_logger->log(                       \
+                LogLevel::Warn,                       \
+                __VA_ARGS__);                         \
+    } while(0)
+#else
+#define LOG_WARN(...)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_INFO
-#define LOG_INFO(msg) global_logger->log(msg)
+#define LOG_INFO(...)                                 \
+    do                                                \
+    {                                                 \
+        if(global_logger)                             \
+            global_logger->log(                       \
+                LogLevel::Info,                       \
+                __VA_ARGS__);                         \
+    } while(0)
 #else
-#define LOG_INFO(msg)
+#define LOG_INFO(...)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_DEBUG
-#define LOG_DEBUG(msg) global_logger->log(msg)
+#define LOG_DEBUG(...)                                \
+    do                                                \
+    {                                                 \
+        if(global_logger)                             \
+            global_logger->log(                       \
+                LogLevel::Debug,                      \
+                __VA_ARGS__);                         \
+    } while(0)
 #else
-#define LOG_DEBUG(msg)
+#define LOG_DEBUG(...)
 #endif
