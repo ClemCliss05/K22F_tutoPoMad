@@ -12,7 +12,7 @@ class Uart {
         bool isRxReady() const;
 
         void writeByte(uint8_t byte);
-        void write(const uint8_t *data, std::size_t length);
+        void write(const char *str);
 
         uint8_t readByte();
 
