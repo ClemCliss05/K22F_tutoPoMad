@@ -33,16 +33,42 @@ option(ANALYSIS "Build hardware independent firmware parts for analysis" OFF)
 option(TESTS "Enable ASAN/UBSAN and tests" OFF)
 
 # ------------------------------------------------------------------------------
-# Host tests
+# Platform CPU Flags definition test
+# ------------------------------------------------------------------------------
+
+if(NOT ANALYSIS)
+
+    if(NOT DEFINED PLATFORM_CPU_FLAGS)
+        message(FATAL_ERROR
+            "CPU is not defined by the toolchain -> uncomment and complete line 16 of cmake/arm-gcc-toolchain.cmake"
+        )
+    endif()
+
+endif()
+
+# ------------------------------------------------------------------------------
+# Compilation Option
 # ------------------------------------------------------------------------------
 
 if(ANALYSIS)
+
+    # --------------------------------------------------------------------------
+    # Host target
+    # --------------------------------------------------------------------------
+
     add_subdirectory(firmware/core)
     add_subdirectory(firmware/services)
     if(TESTS)
         enable_testing()
         add_subdirectory(tests)
     endif()
+
 else()
+
+    # --------------------------------------------------------------------------
+    # Embedded target
+    # --------------------------------------------------------------------------
+
     add_subdirectory(firmware)
+
 endif()
