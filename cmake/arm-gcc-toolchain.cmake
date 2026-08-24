@@ -7,6 +7,13 @@
 
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
+# ------------------------------------------------------------------------------
+# CPU configuration
+# IMPORTANT:
+# This value must match the Cortex-M CPU of the target MCU.
+# Change this value when adapting this platform to another MCU.
+# ------------------------------------------------------------------------------
+set(PLATFORM_CPU_FLAGS "-mcpu=cortex-m4 -mthumb")
 
 # ------------------------------------------------------------------------------
 # Toolchain prefix
@@ -27,6 +34,7 @@ set(CMAKE_ASM_COMPILER ${TOOLCHAIN_PREFIX}gcc)
 # ------------------------------------------------------------------------------
 
 set(CMAKE_OBJCOPY ${TOOLCHAIN_PREFIX}objcopy)
+set(CMAKE_OBJDUMP ${TOOLCHAIN_PREFIX}objdump)
 set(CMAKE_SIZE    ${TOOLCHAIN_PREFIX}size)
 
 # ------------------------------------------------------------------------------
@@ -37,16 +45,11 @@ set(CMAKE_SIZE    ${TOOLCHAIN_PREFIX}size)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 # ------------------------------------------------------------------------------
-# CPU flags (Cortex-M0)
-# ------------------------------------------------------------------------------
-
-set(CPU_FLAGS "-mcpu=cortex-m0 -mthumb")
-
-# ------------------------------------------------------------------------------
 # Default compiler flags
-# These are minimal; project targets add their own flags
+#
+# CPU-specific flags are defined by the selected platform.
 # ------------------------------------------------------------------------------
 
-set(CMAKE_C_FLAGS_INIT "${CPU_FLAGS} -ffreestanding")
-set(CMAKE_CXX_FLAGS_INIT "${CPU_FLAGS} -ffreestanding -fno-exceptions -fno-rtti")
-set(CMAKE_ASM_FLAGS_INIT "${CPU_FLAGS}")
+set(CMAKE_C_FLAGS_INIT "${PLATFORM_CPU_FLAGS} -ffreestanding")
+set(CMAKE_CXX_FLAGS_INIT "${PLATFORM_CPU_FLAGS} -ffreestanding -fno-exceptions -fno-rtti")
+set(CMAKE_ASM_FLAGS_INIT "${PLATFORM_CPU_FLAGS}")

@@ -56,7 +56,8 @@ void Drivers::Uart::writeByte(uint8_t c) {
 
     // Wait until the transmit buffer is empty
     while ((UART1->S1 & UART_S1_TDRE_MASK) != UART_S1_TDRE_MASK);
-		UART1->D = c; // Write the byte to the data register
+
+    UART1->D = c; // Write the byte to the data register
 }
 
 void Drivers::Uart::write(const char *str) {
