@@ -36,8 +36,6 @@ int main() {
     RingBuffer ringBuffer(loggerBuffer, sizeof(loggerBuffer));
     Logger logger(ringBuffer, uartBackend);
     
-    uint32_t i = 0;
-    
     LOG_DEBUG("Boot");
     LOG_DEBUG("Clock OK");
     LOG_DEBUG("UART OK");
@@ -52,13 +50,12 @@ int main() {
     gpio.LED_Off();
 
     while (1) {
-        // Wait here until ADC COCO
-		while ((ADC0->SC1[0] & ADC_SC1_COCO_MASK) != ADC_SC1_COCO_MASK);
+        uint16_t value = adc.read();
 
 		// Report result to console
-		LOG_INFO("ADC value = %d\r\n", ADC0->R[0]);
+		LOG_INFO("ADC value = %d\r\n", value);
 
 		// Wait about 200ms
-		for (i=0; i<500000; i++);
+		delay(500000);
     }
 }

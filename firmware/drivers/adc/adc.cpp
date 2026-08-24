@@ -43,8 +43,9 @@ void Drivers::Adc::init(){
 }
 
 uint16_t Drivers::Adc::read(){
-    // Select channel
-    // Start conversion
-    // Wait
-    // Return result
+    // Wait until conversion is complete
+	while ((ADC0->SC1[0] & ADC_SC1_COCO_MASK) != ADC_SC1_COCO_MASK);
+
+	// Return conversion result
+	return ADC0->R[0];
 }
