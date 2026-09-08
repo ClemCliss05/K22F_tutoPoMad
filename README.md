@@ -28,27 +28,6 @@ VSCode main extensions:
 - CMake Tools
 - Cortex-Debug
 - GitHub Actions
-- SARIF Viewer
-
----
-
-## Architecture
-
-Layered architecture:
-
-```text
-app
- ↓
-services
- ↓
-core
- ↓
-drivers
- ↓
-platform (MK22FN512)
-```
-
-See `ARCHITECTURE.md` for details.
 
 ---
 
@@ -56,27 +35,21 @@ See `ARCHITECTURE.md` for details.
 
 ```text
 firmware/
-├── app/                  # Application entry point
-├── core/                 # Hardware-independent modules
-│   ├── logger/
-│   └── ringbuffer/
-├── services/             # Application services
-│   └── sensor/
-├── drivers/              # Peripheral drivers
-│   ├── gpio/
-│   └── uart/
-└── platform/
-    └── mk22fn512/
-        ├── startup/
-        ├── linker/
-        ├── cmsis/
-        ├── clock.cpp
-        └── interrupt.cpp
+├── app/        # Application entry point
+├── core/       # Hardware-independent modules
+├── services/   # Business logic
+├── drivers/    # Application services
+└── platform/   # Target-specific code
 
 tests/                    # Host unit tests
 scripts/                  # Build and analysis tools
 cmake/                    # Toolchain configuration
+docs/                     # Project documentation
+debug/                    # svd/xml files for CPU peripherals description
+.github/                  # CI/CD workflows
 ```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 
 ---
 
@@ -113,6 +86,16 @@ Tests execute on the host using GoogleTest.
 
 ---
 
+## Flash Firmware
+
+```bash
+./scripts/build.sh flash
+```
+
+Flash firmware.elf by using JLinkExe and scripts/flash_jlink.sh
+
+---
+
 ## Static Analysis
 
 ### clang-format
@@ -127,16 +110,45 @@ Tests execute on the host using GoogleTest.
 ./scripts/clang-tidy.sh
 ```
 
+Scope:
+
+```text
+core
+services
+```
+
 ### cppcheck
 
 ```bash
 ./scripts/cppcheck.sh
 ```
 
+Scope:
+
+```text
+core
+services
+tests
+```
+
 ### CodeQL
 
 ```bash
 ./scripts/codeql.sh
+```
+
+Focus:
+
+```text
+Security
+Memory safety
+Unsafe patterns
+```
+
+### Run Everything
+
+```bash
+./scripts/static_analysis.sh
 ```
 
 ---
@@ -164,18 +176,17 @@ GitHub Actions automatically performs:
 ### Security
 
 - CodeQL analysis
-- SARIF reporting
 
 ---
 
-## Design Principles
+## Design Goals
 
 - Separation of concerns
 - Hardware abstraction
-- Testability first
-- Dependency minimization
+- Testability
+- Maintainability
 - Reproducible builds
-- CI-driven quality control
+- Security by default
 
 ---
 
