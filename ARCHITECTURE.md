@@ -1,14 +1,8 @@
 # Architecture
 
-## Objective
-
-Provide a maintainable and testable firmware architecture for NXP based systems.
+## Overview
 
 The architecture isolates hardware-specific code from portable application logic.
-
----
-
-## Layer Overview
 
 ```text
 app
@@ -22,60 +16,60 @@ drivers
 platform
 ```
 
-Each layer has a single responsibility.
-
 ---
 
-## App
+## Layers
 
-System entry point.
+### App
+
+Application entry point.
 
 Responsibilities:
 
-- system startup
-- initialization
-- application orchestration
+- System initialization
+- Component wiring
+- Main execution flow
 
 Files:
 
 ```text
-firmware/app/
+firmware/app
 ```
 
 ---
 
-## Services
+### Services
 
 Application-specific behavior.
 
 Responsibilities:
 
-- business logic
-- use case implementation
-- coordination between modules
-
-Examples:
-
-```text
-sensor/
-```
+- Application behavior
+- Feature implementation
+- High-level workflows
 
 Rules:
 
-- no register access
-- no MK22FN512 dependencies
+- Can use Core
+- Must not access hardware directly
+
+Files:
+
+```text
+firmware/services
+```
 
 ---
 
-## Core
+### Core
 
-Portable building blocks.
+Hardware-independent utilities.
 
 Responsibilities:
 
-- reusable algorithms
-- utility modules
-- generic components
+- Reusable modules
+- Algorithms
+- Generic infrastructure
 
 Examples:
 
@@ -86,20 +80,25 @@ ringbuffer/
 
 Rules:
 
-- fully platform independent
-- host testable
+- No hardware dependencies
+- Fully testable on host
+
+Files:
+
+```text
+firmware/core
+```
 
 ---
 
-## Drivers
+### Drivers
 
-Peripheral abstraction layer.
+Hardware abstraction layer.
 
 Responsibilities:
 
-- UART
-- GPIO
-- peripheral access
+- Peripheral access
+- Hardware interfaces
 
 Examples:
 
@@ -110,40 +109,45 @@ uart/
 
 Rules:
 
-- no business logic
-- minimal abstraction cost
+- No business logic
+- Minimal processing
+
+Files:
+
+```text
+firmware/drivers
+```
 
 ---
 
-## Platform (MK22FN512)
+### Platform
 
-MK22FN512-specific implementation.
+Target-specific implementation.
 
 Responsibilities:
 
-- startup code
-- CMSIS integration
-- clock configuration
-- interrupt handling
-- linker configuration
+- Startup code
+- Interrupt handling
+- Clock configuration
+- Linker script
+- Vendor CMSIS files
 
-Structure:
+Files:
 
 ```text
-platform/mk22fn512/
+firmware/platform/mcu_name/
 ├── startup/
 ├── linker/
 ├── cmsis/
-├── clock.cpp
-└── interrupt.cpp
+├── bsp/
 ```
 
 Contains:
 
-- startup_MK22F12.cpp
-- STM32F072RBTx_FLASH.ld
+- startup_mcu_name file
+- linkerscript.ld
 - CMSIS Core
-- K22F device headers
+- Target device headers
 
 ---
 
@@ -173,7 +177,7 @@ app      → registers
 
 ## Build Modes
 
-### Firmware
+### Firmware Build
 
 ```text
 ANALYSIS=OFF
@@ -187,13 +191,9 @@ Builds:
 - drivers
 - platform
 
-Target:
-
-- MK22FN512
-
 ---
 
-### Analysis
+### Analysis Build
 
 ```text
 ANALYSIS=ON
@@ -203,11 +203,11 @@ Builds:
 
 - core
 - services
-- tests
+- tests (optional)
 
-Used by:
+Used for:
 
-- GoogleTest
+- Unit tests
 - clang-tidy
 - cppcheck
 - CodeQL
@@ -216,24 +216,29 @@ Used by:
 
 ## Testing Strategy
 
-Host-based testing.
-
 Scope:
 
-- core
-- services
+```text
+core
+services
+```
+
+Execution:
+
+```text
+Host machine
+```
 
 Benefits:
 
-- fast execution
-- deterministic results
-- hardware-independent validation
+- Fast
+- Deterministic
+- Hardware-independent
+- CI-friendly
 
 ---
 
-## Quality Strategy
-
-Static analysis:
+## Static Analysis Strategy
 
 | Tool | Purpose |
 | -------- | ---------- |
@@ -246,13 +251,12 @@ CI automatically executes all checks.
 
 ---
 
-## Summary
+## Goal
 
-This architecture provides:
+Provide a firmware foundation that is:
 
-- clear separation of layers
-- high testability
-- MK22FN512 isolation
-- scalable firmware development
-- CI/CD readiness
-- security-oriented workflow
+- Portable
+- Testable
+- Maintainable
+- Scalable
+- CI/CD friendly

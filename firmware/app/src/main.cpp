@@ -1,6 +1,6 @@
 #include "clock.hpp"
 #include "gpio.hpp"
-#include "adc.hpp"
+#include "pit.hpp"
 
 #include "uart.hpp"
 #include "uart_logger_backend.hpp"
@@ -40,22 +40,24 @@ int main() {
     LOG_DEBUG("Clock OK");
     LOG_DEBUG("UART OK");
 
-    // Initialize ADC0_SE8 on PTB0
-    Drivers::Adc adc;
-	adc.init();
-	LOG_DEBUG("ADC OK");
+    // Initialize PIT channel[0]
+    Drivers::Pit pit;
+	pit.init();
+    volatile uint32_t loop = 0;
+	LOG_DEBUG("PIT OK");
 
     gpio.LED_On();
     delay(5000000);
     gpio.LED_Off();
 
     while (1) {
-        uint16_t value = adc.read();
+        volatile uint32_t cval = PIT->CHANNEL[0].CVAL;
+        volatile uint32_t tflg = PIT->CHANNEL[0].TFLG;
 
-		// Report result to console
-		LOG_INFO("ADC value = %d\r\n", value);
-
-		// Wait about 200ms
-		delay(500000);
+        if(PIT->CHANNEL[0].TFLG == PIT_TFLG_TIF_MASK){
+            PIT->CHANNEL[0].TFLG = PIT_TFLG_TIF_MASK; // clear TIF flag
+            tflg = PIT->CHANNEL[0].TFLG;
+            loop++;
+        }
     }
 }
