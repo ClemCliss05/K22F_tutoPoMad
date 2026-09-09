@@ -30,6 +30,8 @@ void Drivers::Gpio::LED_Init() {
 
 void Drivers::Gpio::LED_On(void) {
     GPIOA->PCOR = (0b1 << 1);
+    GPIOA->PCOR = (0b1 << 2);
+    GPIOD->PCOR = (0b1 << 5);
 }
 
 void Drivers::Gpio::LED_On(LedColor color) {
@@ -65,6 +67,8 @@ void Drivers::Gpio::LED_On(LedColor color) {
 
 void Drivers::Gpio::LED_Off(void) {
     GPIOA->PSOR = (0b1 << 1);
+    GPIOA->PSOR = (0b1 << 2);
+    GPIOD->PSOR = (0b1 << 5);
 }
 
 void Drivers::Gpio::LED_Off(LedColor color) {
@@ -100,6 +104,8 @@ void Drivers::Gpio::LED_Off(LedColor color) {
 
 void Drivers::Gpio::LED_Toggle(void) {
     GPIOA->PTOR = (0b1 << 1);
+    GPIOA->PTOR = (0b1 << 2);
+    GPIOD->PTOR = (0b1 << 5);
 }
 
 void Drivers::Gpio::LED_Toggle(LedColor color) {

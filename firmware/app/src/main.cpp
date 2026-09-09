@@ -27,6 +27,7 @@ int main() {
     Drivers::Gpio gpio;
     gpio.LED_Init();
     gpio.PBs_Init();
+    using LedColor = Drivers::Gpio::LedColor;
 
     // Init UART
     Drivers::Uart uart;
@@ -43,21 +44,18 @@ int main() {
     // Initialize PIT channel[0]
     Drivers::Pit pit;
 	pit.init();
-    volatile uint32_t loop = 0;
 	LOG_DEBUG("PIT OK");
 
     gpio.LED_On();
-    delay(5000000);
+    pit.delayMs(1000);
     gpio.LED_Off();
 
     while (1) {
-        volatile uint32_t cval = PIT->CHANNEL[0].CVAL;
-        volatile uint32_t tflg = PIT->CHANNEL[0].TFLG;
-
-        if(PIT->CHANNEL[0].TFLG == PIT_TFLG_TIF_MASK){
-            PIT->CHANNEL[0].TFLG = PIT_TFLG_TIF_MASK; // clear TIF flag
-            tflg = PIT->CHANNEL[0].TFLG;
-            loop++;
-        }
+        gpio.LED_On(LedColor::Green);
+        pit.delayMs(1000);
+        gpio.LED_Off();
+        gpio.LED_On(LedColor::Blue);
+        pit.delayMs(1000);
+        gpio.LED_Off();
     }
 }
