@@ -10,16 +10,13 @@ Logger::Logger(RingBuffer &buffer, ILoggerBackend &backend) : buffer_(buffer), b
     global_logger = this;
 }
 
-void Logger::log(LogLevel level, const char* fmt, ...) {
+void Logger::log(LogLevel level, const char *fmt, ...) {
     // Format the message using vsnprintf
     char fmtMsg[128];
-    const char* pFmtMsg = fmtMsg;
+    const char *pFmtMsg = fmtMsg;
     va_list args;
     va_start(args, fmt);
-    vsnprintf(fmtMsg,
-          sizeof(fmtMsg),
-          fmt,
-          args);
+    vsnprintf(fmtMsg, sizeof(fmtMsg), fmt, args);
     va_end(args);
 
     writePrefix(level);
@@ -38,31 +35,28 @@ void Logger::log(LogLevel level, const char* fmt, ...) {
     flush();
 }
 
-void Logger::writePrefix(LogLevel level)
-{
-    const char* prefix;
+void Logger::writePrefix(LogLevel level) {
+    const char *prefix;
 
-    switch(level)
-    {
-        case LogLevel::Error:
-            prefix = "[ERROR] ";
-            break;
+    switch (level) {
+    case LogLevel::Error:
+        prefix = "[ERROR] ";
+        break;
 
-        case LogLevel::Warn:
-            prefix = "[WARN ] ";
-            break;
+    case LogLevel::Warn:
+        prefix = "[WARN ] ";
+        break;
 
-        case LogLevel::Info:
-            prefix = "[INFO ] ";
-            break;
+    case LogLevel::Info:
+        prefix = "[INFO ] ";
+        break;
 
-        case LogLevel::Debug:
-            prefix = "[DEBUG] ";
-            break;
+    case LogLevel::Debug:
+        prefix = "[DEBUG] ";
+        break;
     }
 
-    while (*prefix)
-    {
+    while (*prefix) {
         if (!buffer_.push(*prefix)) {
             return;
         }
