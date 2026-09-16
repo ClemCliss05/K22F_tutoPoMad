@@ -3,12 +3,38 @@
 #include <cstdint>
 
 namespace Drivers {
-    class Pit {
-        public:
-            
-            // FOR THE MOMENT ONLY WORKING FOR 48 MHZ BUS CLOCK...
-            void init(void);
-            void delayMs(uint32_t ms);
-        private:
+
+class Pit {
+  public:
+    explicit Pit(uint32_t clockHz);
+
+    void init();
+
+    /**
+     * ticks = PITclkFreq × wantedDuration
+     *
+     * Example PITclkFreq at 48 MHz:
+     *   1 ms  → 48,000 ticks
+     *   10 ms → 480,000 ticks
+     */
+    void start(uint32_t ticks);
+
+    void stop();
+
+    /**
+     * Returns true when the configured timer period has elapsed.
+     */
+    bool expired() const;
+
+    /**
+     * Clear the timer interrupt flag (TIF).
+     */
+    void clearFlag();
+
+    uint32_t getClockHz() const;
+
+  private:
+    uint32_t clockHz_;
 };
+
 } // namespace Drivers

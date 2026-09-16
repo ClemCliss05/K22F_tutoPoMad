@@ -1,41 +1,52 @@
 #include "pit.hpp"
+
 #include "MK22FN512.h"
 
-// FOR THE MOMENT ONLY WORKING FOR 48 MHZ BUS CLOCK...
+namespace Drivers {
 
-void Drivers::Pit::init(){
+Pit::Pit(uint32_t clockHz) : clockHz_(clockHz) {}
+
+void Pit::init() {
     // Enable PIT clock
     SIM->SCGC6 |= SIM_SCGC6_PIT_MASK;
 
-    // Reset PIT configuration
-    PIT->MCR = 0x00000000;
+    // Reset PIT CHANNEL[0] configuration
+    PIT->MCR = 0;
+    PIT->CHANNEL[0].TCTRL = 0;
 
     // // Enable interruption
     // PIT->CHANNEL[0].TCTRL |= PIT_TCTRL_TIE_MASK;
 }
 
-void Drivers::Pit::delayMs(uint32_t ms)
-{
-    // Set timeout period for the timer interrupts
-    // LDVAL trigger = (wantedPeriod*freqClockTimer) - 1
-    // ex 1ms Period: 1e(-3)*48000000 - 1 = 47 999 cycles.
-    // 47 999 cycles = 0xbb7f
-    PIT->CHANNEL[0].LDVAL = (48000U * ms) - 1U;
+void Pit::start(uint32_t ticks) {
+    // Stop the timer before reconfiguration
+    stop();
 
-    // Clear éventuel timeout précédent
-    PIT->CHANNEL[0].TFLG = PIT_TFLG_TIF_MASK;
+    // PIT counts from LDVAL down to 0
+    PIT->CHANNEL[0].LDVAL = ticks - 1U;
 
-    // Start
+    // Clear any previous timeout flag
+    clearFlag();
+
+    // Start timer
     PIT->CHANNEL[0].TCTRL |= PIT_TCTRL_TEN_MASK;
+}
 
-    // Wait
-    while (!(PIT->CHANNEL[0].TFLG & PIT_TFLG_TIF_MASK))
-    {
-    }
-
-    // Stop
+void Pit::stop() {
     PIT->CHANNEL[0].TCTRL &= ~PIT_TCTRL_TEN_MASK;
+}
 
-    // Clear timeout
+bool Pit::expired() const {
+    return (PIT->CHANNEL[0].TFLG & PIT_TFLG_TIF_MASK) != 0U;
+}
+
+void Pit::clearFlag() {
+    // TIF is Write-1-to-Clear
     PIT->CHANNEL[0].TFLG = PIT_TFLG_TIF_MASK;
 }
+
+uint32_t Pit::getClockHz() const {
+    return clockHz_;
+}
+
+} // namespace Drivers

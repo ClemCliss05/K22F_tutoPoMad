@@ -151,6 +151,13 @@ bool Bsp::Clock::set120MHz() {
     return false;
 }
 
-uint32_t Bsp::Clock::getCoreClock() {
+uint32_t Bsp::Clock::getCoreClock() const {
     return SystemCoreClock;
+}
+
+uint32_t Bsp::Clock::getBusClock() const {
+    const uint32_t divider =
+        ((SIM->CLKDIV1 & SIM_CLKDIV1_OUTDIV2_MASK) >> SIM_CLKDIV1_OUTDIV2_SHIFT) + 1U;
+
+    return SystemCoreClock / divider;
 }
