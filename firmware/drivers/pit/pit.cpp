@@ -34,6 +34,12 @@ bool Pit::start(uint64_t ticks) {
     // Clear any previous timeout flag.
     clearFlag();
 
+    // Enable PIT channel 0 interrupt in the NVIC.
+    NVIC_EnableIRQ(PIT0_IRQn);
+
+    // Enable PIT channel 0 interrupt.
+    PIT->CHANNEL[0].TCTRL |= PIT_TCTRL_TIE_MASK;
+
     // Start channel 0.
     PIT->CHANNEL[0].TCTRL |= PIT_TCTRL_TEN_MASK;
 

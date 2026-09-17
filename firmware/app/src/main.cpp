@@ -1,12 +1,14 @@
 #include "clock.hpp"
-#include "delay.hpp"
+#include "interrupt.hpp"
+
 #include "gpio.hpp"
+#include "uart.hpp"
 #include "pit.hpp"
 
 #include "logger.hpp"
 #include "ringbuffer.hpp"
-#include "uart.hpp"
 #include "uart_logger_backend.hpp"
+#include "delay.hpp"
 
 #include "MK22FN512.h"
 
@@ -32,23 +34,18 @@ int main() {
     Logger logger(ringBuffer, uartBackend);
     LOG_DEBUG("UART OK");
 
-    // Initialize PIT channel[0]
+    // Initialize PIT channel[0] with interruptions
     Drivers::Pit pit(clock.getBusClock());
     pit.init();
     LOG_DEBUG("PIT OK");
-    Services::Delay delay(pit);
-    LOG_DEBUG("DELAY OK");
 
-    gpio.LED_On();
-    delay.ms(1000);
-    gpio.LED_Off();
+    pit.start(48000);
 
     while (1) {
-        gpio.LED_On(LedColor::Green);
-        delay.ms(1000);
-        gpio.LED_Off();
-        gpio.LED_On(LedColor::Blue);
-        delay.ms(1000);
-        gpio.LED_Off();
+        if(pit0Ticks >= 1000U){
+            pit0Ticks = 0;
+
+            gpio.LED_Toggle();
+        }
     }
 }
