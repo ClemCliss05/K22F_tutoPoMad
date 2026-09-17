@@ -10,26 +10,34 @@ void Pit::init() {
     // Enable PIT clock
     SIM->SCGC6 |= SIM_SCGC6_PIT_MASK;
 
-    // Reset PIT CHANNEL[0] configuration
+    // Disable PIT and reset configuration
     PIT->MCR = 0;
     PIT->CHANNEL[0].TCTRL = 0;
 
-    // // Enable interruption
-    // PIT->CHANNEL[0].TCTRL |= PIT_TCTRL_TIE_MASK;
+    clearFlag();
 }
 
-void Pit::start(uint32_t ticks) {
-    // Stop the timer before reconfiguration
+bool Pit::start(uint64_t ticks) {
+    // The PIT counter is 32 bits.
+    // A zero tick period is also invalid because LDVAL = ticks - 1.
+    if (ticks == 0U || ticks > UINT32_MAX) {
+        return false;
+    }
+
+    // Stop the timer before changing its configuration.
     stop();
 
-    // PIT counts from LDVAL down to 0
-    PIT->CHANNEL[0].LDVAL = ticks - 1U;
+    // PIT counts from LDVAL down to 0.
+    // Therefore, ticks periods require LDVAL = ticks - 1.
+    PIT->CHANNEL[0].LDVAL = static_cast<uint32_t>(ticks - 1U);
 
-    // Clear any previous timeout flag
+    // Clear any previous timeout flag.
     clearFlag();
 
-    // Start timer
+    // Start channel 0.
     PIT->CHANNEL[0].TCTRL |= PIT_TCTRL_TEN_MASK;
+
+    return true;
 }
 
 void Pit::stop() {

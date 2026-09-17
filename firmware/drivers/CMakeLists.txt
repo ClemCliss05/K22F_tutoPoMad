@@ -11,7 +11,6 @@ target_sources(drivers PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/uart/uart.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/adc/adc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/pit/pit.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codeql_test.cpp
 )
 
 target_include_directories(drivers PUBLIC

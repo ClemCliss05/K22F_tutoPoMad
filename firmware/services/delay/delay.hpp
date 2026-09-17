@@ -16,7 +16,7 @@ class Delay {
      * Example:
      *   delay.ms(100); // wait approximately 100 ms
      */
-    void ms(uint32_t milliseconds);
+    bool ms(uint32_t milliseconds);
 
     /**
      * Blocking delay in microseconds.
@@ -24,7 +24,7 @@ class Delay {
      * Example:
      *   delay.us(100); // wait approximately 100 us
      */
-    void us(uint32_t microseconds);
+    bool us(uint32_t microseconds);
 
   private:
     Drivers::Pit &pit_;

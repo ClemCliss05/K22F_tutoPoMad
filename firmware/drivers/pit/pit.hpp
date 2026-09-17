@@ -17,7 +17,7 @@ class Pit {
      *   1 ms  → 48,000 ticks
      *   10 ms → 480,000 ticks
      */
-    void start(uint32_t ticks);
+    bool start(uint64_t ticks);
 
     void stop();
 
