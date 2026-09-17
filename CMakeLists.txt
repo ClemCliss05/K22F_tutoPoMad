@@ -53,11 +53,13 @@ endif()
 if(ANALYSIS)
 
     # --------------------------------------------------------------------------
-    # Host target
+    # Host analysis
+    #
+    # Only hardware-independent code is built for the host.
     # --------------------------------------------------------------------------
 
     add_subdirectory(firmware/core)
-    add_subdirectory(firmware/services)
+
     if(TESTS)
         enable_testing()
         add_subdirectory(tests)

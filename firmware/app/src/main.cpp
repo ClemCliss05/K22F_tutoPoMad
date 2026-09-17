@@ -1,4 +1,5 @@
 #include "clock.hpp"
+#include "delay.hpp"
 #include "gpio.hpp"
 #include "pit.hpp"
 
@@ -25,45 +26,29 @@ int main() {
     // Init UART
     Drivers::Uart uart;
     uart.init();
-    UartLoggerBackend uartBackend(uart);
+    Services::UartLoggerBackend uartBackend(uart);
     char loggerBuffer[128];
     RingBuffer ringBuffer(loggerBuffer, sizeof(loggerBuffer));
     Logger logger(ringBuffer, uartBackend);
-
-    LOG_DEBUG("Boot");
-    LOG_DEBUG("Clock OK");
     LOG_DEBUG("UART OK");
 
     // Initialize PIT channel[0]
     Drivers::Pit pit(clock.getBusClock());
     pit.init();
     LOG_DEBUG("PIT OK");
+    Services::Delay delay(pit);
+    LOG_DEBUG("DELAY OK");
 
     gpio.LED_On();
-    pit.start(48000000);
-    while (!pit.expired()) {
-        __NOP();
-    }
-    pit.clearFlag();
-    pit.stop();
+    delay.ms(1000);
     gpio.LED_Off();
 
     while (1) {
         gpio.LED_On(LedColor::Green);
-        pit.start(48000000);
-        while (!pit.expired()) {
-            __NOP();
-        }
-        pit.clearFlag();
-        pit.stop();
+        delay.ms(1000);
         gpio.LED_Off();
         gpio.LED_On(LedColor::Blue);
-        pit.start(48000000);
-        while (!pit.expired()) {
-            __NOP();
-        }
-        pit.clearFlag();
-        pit.stop();
+        delay.ms(1000);
         gpio.LED_Off();
     }
 }

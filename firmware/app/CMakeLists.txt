@@ -34,6 +34,7 @@ set_target_properties(firmware PROPERTIES
 target_link_libraries(firmware PRIVATE
 
     services
+    core
     drivers
     platform_mk22fn512
 )
