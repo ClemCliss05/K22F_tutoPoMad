@@ -1,16 +1,15 @@
+#include "MK22FN512.h"
+
 #include "clock.hpp"
-#include "interrupt.hpp"
 
 #include "gpio.hpp"
-#include "uart.hpp"
 #include "pit.hpp"
+#include "uart.hpp"
 
+#include "delay.hpp"
 #include "logger.hpp"
 #include "ringbuffer.hpp"
 #include "uart_logger_backend.hpp"
-#include "delay.hpp"
-
-#include "MK22FN512.h"
 
 int main() {
 
@@ -34,18 +33,33 @@ int main() {
     Logger logger(ringBuffer, uartBackend);
     LOG_DEBUG("UART OK");
 
-    // Initialize PIT channel[0] with interruptions
+    // Initialize PIT channel[0] as millisec scheduler
     Drivers::Pit pit(clock.getBusClock());
     pit.init();
+    pit.start();
     LOG_DEBUG("PIT OK");
+    Services::Delay delayLED1(pit);
+    Services::Delay delayLED2(pit);
+    Services::Delay delayLED3(pit);
+    LOG_DEBUG("DELAY OK");
 
-    pit.start(48000);
+    gpio.LED_On();
+    delayLED1.waitMs(2000);
+    gpio.LED_Off();
+
+    delayLED1.startPeriodicMs(1000);
+    delayLED2.startPeriodicMs(2000);
+    delayLED3.startPeriodicMs(3000);
 
     while (1) {
-        if(pit0Ticks >= 1000U){
-            pit0Ticks = 0;
-
-            gpio.LED_Toggle();
+        if (delayLED1.expired()) {
+            gpio.LED_Toggle(LedColor::Red);
+        }
+        if (delayLED2.expired()) {
+            gpio.LED_Toggle(LedColor::Green);
+        }
+        if (delayLED3.expired()) {
+            gpio.LED_Toggle(LedColor::Blue);
         }
     }
 }

@@ -2,72 +2,81 @@
 
 namespace Services {
 
-Delay::Delay(Drivers::Pit &pit) : pit_(pit) {}
+Delay::Delay(Drivers::Pit &pit)
+    : pit_(pit), startTick_(0U), durationTicks_(0U), active_(false), periodic_(false) {}
 
-bool Delay::us(uint32_t microseconds) {
-    // A zero-duration delay is considered invalid.
-    if (microseconds == 0U) {
-        return false;
-    }
-
-    const uint64_t clockHz = pit_.getClockHz();
-
-    // Convert microseconds to PIT clock ticks.
-    //
-    // The addition performs a ceiling division so that the actual
-    // delay is never shorter than the requested delay.
-    const uint64_t ticks = (clockHz * microseconds + 999'999ULL) / 1'000'000ULL;
-
-    // Pit::start() checks whether the requested number of ticks
-    // can be represented by the 32-bit PIT counter.
-    if (!pit_.start(ticks)) {
-        return false;
-    }
-
-    // Blocking wait until the PIT reaches zero.
-    while (!pit_.expired()) {
-    }
-
-    // Clear the timeout flag before stopping the timer.
-    pit_.clearFlag();
-
-    // Stop the timer.
-    pit_.stop();
-
-    return true;
-}
-
-bool Delay::ms(uint32_t milliseconds) {
-    // A zero-duration delay is considered invalid.
+bool Delay::startMs(uint32_t milliseconds) {
     if (milliseconds == 0U) {
         return false;
     }
 
-    const uint64_t clockHz = pit_.getClockHz();
+    startTick_ = pit_.getTicks();
+    durationTicks_ = milliseconds;
 
-    // Convert milliseconds to PIT clock ticks.
-    //
-    // Ceiling division ensures that the actual delay is never
-    // shorter than the requested delay.
-    const uint64_t ticks = (clockHz * milliseconds + 999ULL) / 1'000ULL;
+    active_ = true;
+    periodic_ = false;
 
-    // Pit::start() checks whether the requested number of ticks
-    // can be represented by the 32-bit PIT counter.
-    if (!pit_.start(ticks)) {
+    return true;
+}
+
+bool Delay::startPeriodicMs(uint32_t milliseconds) {
+    if (milliseconds == 0U) {
         return false;
     }
 
-    // Blocking wait until the PIT reaches zero.
-    while (!pit_.expired()) {
-    }
+    startTick_ = pit_.getTicks();
+    durationTicks_ = milliseconds;
 
-    // Clear the timeout flag before stopping the timer.
-    pit_.clearFlag();
-
-    // Stop the timer.
-    pit_.stop();
+    active_ = true;
+    periodic_ = true;
 
     return true;
+}
+
+void Delay::waitMs(uint32_t milliseconds) {
+    if (milliseconds == 0U) {
+        return;
+    }
+
+    const uint32_t startTick = pit_.getTicks();
+
+    while ((pit_.getTicks() - startTick) < milliseconds) {
+    }
+}
+
+bool Delay::expired() {
+    if (!active_) {
+        return false;
+    }
+
+    const uint32_t elapsed = pit_.getTicks() - startTick_;
+
+    if (elapsed < durationTicks_) {
+        return false;
+    }
+
+    if (periodic_) {
+        /*
+         * Advance by exactly one period instead of using
+         * the current tick as the new starting point.
+         *
+         * This prevents long-term drift if expired() is
+         * called slightly after the expected expiration time.
+         */
+        startTick_ += durationTicks_;
+    } else {
+        /*
+         * One-shot delay:
+         * keep the timer active until the user explicitly
+         * calls stop() or starts another delay.
+         */
+    }
+
+    return true;
+}
+
+void Delay::stop() {
+    active_ = false;
 }
 
 } // namespace Services

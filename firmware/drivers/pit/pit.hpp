@@ -11,25 +11,20 @@ class Pit {
     void init();
 
     /**
-     * ticks = PITclkFreq × wantedDuration
+     * Start the PIT as a periodic 1 ms system tick.
      *
-     * Example PITclkFreq at 48 MHz:
-     *   1 ms  → 48,000 ticks
-     *   10 ms → 480,000 ticks
+     * The PIT generates one interrupt every millisecond.
      */
-    bool start(uint64_t ticks);
+    bool start();
 
     void stop();
 
     /**
-     * Returns true when the configured timer period has elapsed.
+     * Return the number of elapsed PIT ticks since initialization.
+     *
+     * One tick corresponds to 1 ms.
      */
-    bool expired() const;
-
-    /**
-     * Clear the timer interrupt flag (TIF).
-     */
-    void clearFlag();
+    uint32_t getTicks() const;
 
     uint32_t getClockHz() const;
 
