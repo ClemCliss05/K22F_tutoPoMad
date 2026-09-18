@@ -10,7 +10,7 @@ Go through the commits in order to understand the different development steps.
 
 ## Purpose
 
-This project provides a structured foundation for developing MK22FN512 firmware.
+This project provides a structured foundation for developing TARGET firmware.
 
 Main objectives:
 
@@ -54,7 +54,7 @@ firmware/
 ├── services/     # Application-level services
 ├── core/         # Hardware-independent components
 ├── drivers/      # MCU peripheral drivers
-└── platform/     # MK22FN512-specific code
+└── platform/     # TARGET-specific code
 
 tests/             # Host unit tests
 scripts/           # Build and analysis scripts
@@ -74,7 +74,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for more details.
 ./scripts/build.sh
 ```
 
-The firmware is cross-compiled for the MK22FN512 using ARM GCC.
+The firmware is cross-compiled for the TARGET using ARM GCC.
 
 Generated files include:
 
@@ -137,7 +137,6 @@ Current scope:
 
 ```text
 firmware/core
-firmware/services
 ```
 
 ### cppcheck
@@ -159,6 +158,14 @@ tests
 ```
 
 Vendor CMSIS files and generated/target-specific startup and linker files are excluded.
+
+### Run Everything
+
+```bash
+./scripts/static_analysis.sh
+```
+
+This runs the project's static-analysis checks (clang-format, clang-tidy and cppcheck).
 
 ### CodeQL
 
@@ -187,14 +194,6 @@ Main focus:
 * Security-sensitive data flows
 
 CodeQL is complementary to cppcheck and clang-tidy rather than a replacement for them.
-
-### Run Everything
-
-```bash
-./scripts/static_analysis.sh
-```
-
-This runs the project's static-analysis checks.
 
 ---
 

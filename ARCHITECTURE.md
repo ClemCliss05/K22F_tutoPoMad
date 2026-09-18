@@ -152,13 +152,13 @@ Rules:
 * No dependency on services
 * Keep interfaces simple and explicit
 
-Drivers depend on the target platform.
+Drivers depend on the TARGET platform.
 
 ---
 
 ### Platform
 
-Target-specific MCU support.
+TARGET-specific MCU support.
 
 Responsibilities:
 
@@ -173,20 +173,20 @@ Responsibilities:
 Location:
 
 ```text
-firmware/platform/mk22fn512/
+firmware/platform/mcu_name/
 ```
 
 Structure:
 
 ```text
-platform/mk22fn512/
+platform/mcu_name/
 ├── startup/
 ├── linker/
 ├── cmsis/
 └── bsp/
 ```
 
-The platform layer contains code that is tightly coupled to the MK22FN512.
+The platform layer contains code that is tightly coupled to the TARGET.
 
 ---
 
@@ -343,7 +343,7 @@ firmware/
 tests/
 ```
 
-while excluding vendor and target-support files such as:
+while excluding vendor and TARGET-support files such as:
 
 ```text
 cmsis/
@@ -430,7 +430,7 @@ The project therefore uses several complementary layers:
              ASAN / UBSAN
                   │
                   ▼
-             Target Hardware
+             TARGET Hardware
 ```
 
 This layered approach is particularly important for embedded software where memory safety, undefined behavior and external input handling can directly affect system reliability and security.
@@ -442,7 +442,7 @@ This layered approach is particularly important for embedded software where memo
 The project is split into independent CMake targets.
 
 ```text
-platform_mk22fn512
+platform_mcu_name
         ↑
      drivers
         ↑
@@ -481,7 +481,7 @@ firmware/
 │   ├── adc/
 │   └── bluetooth/
 └── platform/
-    └── mk22fn512/
+    └── mcu_name/
 ```
 
 For the future Bluetooth part, a typical flow will become:
