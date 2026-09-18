@@ -4,10 +4,10 @@
 
 namespace Drivers {
 class Adc {
-    public:
+  public:
+    void init(void);
+    uint16_t read(void);
 
-        void init(void);
-        uint16_t read(void);
-    private:
+  private:
 };
 } // namespace Drivers

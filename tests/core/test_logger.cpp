@@ -24,9 +24,9 @@ TEST(LoggerTest, LogMessage) {
 
     Logger logger(rb, backend);
 
-    logger.log(LogLevel::Debug,"hello");
+    logger.log(LogLevel::Debug, "hello");
 
-    EXPECT_EQ( backend.out, "[DEBUG] hello\r\n");
+    EXPECT_EQ(backend.out, "[DEBUG] hello\r\n");
 }
 
 TEST(LoggerTest, FormatInteger) {
@@ -40,7 +40,7 @@ TEST(LoggerTest, FormatInteger) {
 
     logger.log(LogLevel::Debug, "Counter=%d", 42);
 
-    EXPECT_EQ( backend.out, "[DEBUG] Counter=42\r\n");
+    EXPECT_EQ(backend.out, "[DEBUG] Counter=42\r\n");
 }
 
 TEST(LoggerTest, MultipleMessages) {
@@ -55,5 +55,6 @@ TEST(LoggerTest, MultipleMessages) {
     logger.log(LogLevel::Debug, "Hello");
     logger.log(LogLevel::Debug, "World");
 
-    EXPECT_EQ( backend.out, "[DEBUG] Hello\r\n" "[DEBUG] World\r\n");
+    EXPECT_EQ(backend.out, "[DEBUG] Hello\r\n"
+                           "[DEBUG] World\r\n");
 }

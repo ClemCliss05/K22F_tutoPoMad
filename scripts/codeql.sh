@@ -7,8 +7,7 @@ CODEQL_DIR=build/build_codeql
 echo "Compile project"
 
 cmake -B $CODEQL_DIR \
-    -DANALYSIS=ON \
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    -DCMAKE_TOOLCHAIN_FILE=cmake/arm-gcc-toolchain.cmake
 
 echo "Creating CodeQL database"
 
@@ -21,7 +20,7 @@ echo "Running security analysis"
 codeql database analyze $CODEQL_DIR/codeql-db \
     codeql/cpp-queries:codeql-suites/cpp-security-extended.qls \
     --threads=1 \
-    --ram=1500 \
+    --ram=2048 \
     --format=sarif-latest \
     --output=$CODEQL_DIR/codeql-results.sarif
 

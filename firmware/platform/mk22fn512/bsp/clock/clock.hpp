@@ -10,6 +10,7 @@ class Clock {
     bool set120MHz();
     bool set48MHz();
 
-    uint32_t getCoreClock();
+    uint32_t getCoreClock() const;
+    uint32_t getBusClock() const;
 };
 } // namespace Bsp

@@ -52,18 +52,18 @@ void Drivers::Uart::init() {
     UART1->C2 |= UART_C2_RE_MASK | UART_C2_TE_MASK;
 }
 
-void Drivers::Uart::writeByte(uint8_t c) {
+void Drivers::Uart::writeByte(uint8_t byte) {
 
     // Wait until the transmit buffer is empty
-    while ((UART1->S1 & UART_S1_TDRE_MASK) != UART_S1_TDRE_MASK);
+    while ((UART1->S1 & UART_S1_TDRE_MASK) != UART_S1_TDRE_MASK)
+        ;
 
-    UART1->D = c; // Write the byte to the data register
+    UART1->D = byte; // Write the byte to the data register
 }
 
 void Drivers::Uart::write(const char *str) {
 
-    while (*str != '\0')
-    {
+    while (*str != '\0') {
         writeByte(*str++);
     }
 }

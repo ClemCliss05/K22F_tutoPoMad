@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-echo "Formatting all project code..."
-
 FILES=$(find firmware tests \
     \( -name "*.cpp" -o -name "*.hpp" -o -name "*.c" -o -name "*.h" \) \
     -not -path "*/cmsis/*" \
@@ -10,6 +8,24 @@ FILES=$(find firmware tests \
     -not -path "*/startup/*"
 )
 
-clang-format --verbose -i -style=file:scripts/config/clang-format.yaml $FILES
+if [[ "$1" == "--check" ]]; then
 
-echo "Format done."
+    echo "Checking formatting..."
+
+    clang-format \
+        --dry-run \
+        --Werror \
+        -style=file:scripts/config/clang-format.yaml \
+        $FILES
+
+else
+
+    echo "Formatting project..."
+
+    clang-format \
+        --verbose \
+        -i \
+        -style=file:scripts/config/clang-format.yaml \
+        $FILES
+
+fi
