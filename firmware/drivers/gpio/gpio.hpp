@@ -7,6 +7,9 @@ class Gpio {
   public:
     /*
      * LED driver functions
+     * PTA1 -> LEDRGB_RED
+     * PTA2 -> LEDRGB_GREEN
+     * PTD5 -> LEDRGB_BLUE
      */
 
     enum class LedColor : uint8_t { Red, Green, Blue, Cyan, Yellow, Magenta, White };
@@ -21,6 +24,8 @@ class Gpio {
 
     /*
      * Push Button driver functions
+     * PTB17 -> PB1
+     * PTC1  -> PB2
      */
 
     void PBs_Init(void);

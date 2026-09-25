@@ -2,14 +2,14 @@
 #include "MK22FN512.h"
 
 void Drivers::Adc::init() {
-    // Enable GPIOC clock
+    // Enable PORTB clock
     SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK;
 
     // Configure pin PTB0 as analog
     PORTB->PCR[0] &= ~PORT_PCR_MUX_MASK;
     PORTB->PCR[0] |= PORT_PCR_MUX(0x00);
 
-    // Enable ADC clock
+    // Enable ADC0 clock
     SIM->SCGC6 |= SIM_SCGC6_ADC0_MASK;
 
     // Reset ADC configuration
