@@ -2,23 +2,32 @@
 
 #include <cstdint>
 
-namespace Drivers {
+namespace Drivers
+{
+    class Ftm
+    {
+    public:
 
-class Ftm {
-  public:
-    /*
-     * FTM driver functions
-     * PTB18 -> FTM2_CH0
-     */
+        struct Capture
+        {
+            uint32_t timestamp;
+            bool level;
+        };
 
-    explicit Ftm(uint32_t clockHz);
+        explicit Ftm(uint32_t busClockHz_);
 
-    void init();
+        void init();
 
-    uint32_t getClockHz() const;
+        uint32_t getClockHz() const;
 
-  private:
-    uint32_t clockHz_;
-};
+        bool captureAvailable() const;
 
-} // namespace Drivers
+        bool readCapture(Capture& capture);
+
+        uint32_t ticksToMs(uint32_t ticks) const;
+
+    private:
+
+        uint32_t busClockHz_;
+    };
+}

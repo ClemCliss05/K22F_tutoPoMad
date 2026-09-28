@@ -1,10 +1,11 @@
-#include "ftm.hpp"
-
 #include "MK22FN512.h"
+
+#include "ftm.hpp"
+#include "interrupt.hpp"
 
 namespace Drivers {
 
-Ftm::Ftm(uint32_t clockHz) : clockHz_(clockHz) {}
+Ftm::Ftm(uint32_t busClockHz) : busClockHz_(busClockHz) {}
 
 void Ftm::init() {
     // Enable clocks.
@@ -57,7 +58,43 @@ void Ftm::init() {
 uint32_t Ftm::getClockHz() const {
     const uint32_t prescaler = ((FTM2->SC & FTM_SC_PS_MASK) >> FTM_SC_PS_SHIFT);
 
-    return clockHz_ / (1U << prescaler);
+    return busClockHz_ / (1U << prescaler);
+}
+
+bool Ftm::captureAvailable() const
+{
+    return Interrupt::ftm2CapturePending;
+}
+
+bool Ftm::readCapture(Capture& capture)
+{
+    if (!Interrupt::ftm2CapturePending)
+    {
+        return false;
+    }
+
+    // Prevent the ISR from modifying the shared state
+    // while we copy it.
+    NVIC_DisableIRQ(FTM2_IRQn);
+
+    capture.timestamp = Interrupt::ftm2CaptureTime;
+    capture.level = Interrupt::ftm2CaptureLevel;
+
+    Interrupt::ftm2CapturePending = false;
+
+    NVIC_EnableIRQ(FTM2_IRQn);
+
+    return true;
+}
+
+uint32_t Ftm::ticksToMs(uint32_t ticks) const
+{
+    const uint32_t ftmClockHz = getClockHz();
+
+    return static_cast<uint32_t>(
+        (static_cast<uint64_t>(ticks) * 1000ULL)
+        / ftmClockHz
+    );;
 }
 
 } // namespace Drivers

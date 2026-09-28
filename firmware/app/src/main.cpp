@@ -5,38 +5,99 @@
 
 #include "ftm.hpp"
 #include "gpio.hpp"
+#include "pit.hpp"
 #include "uart.hpp"
 
 #include "logger.hpp"
 #include "ringbuffer.hpp"
 #include "uart_logger_backend.hpp"
 
-int main() {
+#include "button.hpp"
 
-    // Init Clock
+
+int main()
+{
+    // =========================================================================
+    // Clock
+    // =========================================================================
+
     Bsp::Clock clock;
+
     clock.initOSC();
     clock.set48MHz();
 
-    // Init GPIO
+
+    // =========================================================================
+    // GPIO
+    // =========================================================================
+
     Drivers::Gpio gpio;
+
     gpio.LED_Init();
     gpio.PBs_Init();
+
     using LedColor = Drivers::Gpio::LedColor;
 
-    // Init UART
+
+    // =========================================================================
+    // UART + Logger
+    // =========================================================================
+
     Drivers::Uart uart;
     uart.init();
+
     Services::UartLoggerBackend uartBackend(uart);
+
     char loggerBuffer[128];
-    RingBuffer ringBuffer(loggerBuffer, sizeof(loggerBuffer));
-    Logger logger(ringBuffer, uartBackend);
+
+    RingBuffer ringBuffer(
+        loggerBuffer,
+        sizeof(loggerBuffer)
+    );
+
+    Logger logger(
+        ringBuffer,
+        uartBackend
+    );
+
     LOG_DEBUG("UART OK");
 
-    // Initialize FTM2 channel[0] as Input capture
+
+    // =========================================================================
+    // PIT0
+    // =========================================================================
+
+    Drivers::Pit pit(clock.getBusClock());
+
+    pit.init();
+    pit.start();
+
+    LOG_DEBUG("PIT0 OK");
+
+
+    // =========================================================================
+    // FTM2 Input Capture
+    // =========================================================================
+
     Drivers::Ftm ftm(clock.getBusClock());
+
     ftm.init();
-    LOG_DEBUG("FTM OK");
+
+    LOG_DEBUG("FTM2 OK");
+
+
+    // =========================================================================
+    // Button
+    // =========================================================================
+
+    Services::Button button;
+
+    button.init();
+
+
+    // =========================================================================
+    // Main loop
+    // =========================================================================
 
     gpio.LED_On(LedColor::Blue);
     for (volatile uint32_t i = 0; i < 5000000; i++) {
@@ -44,27 +105,50 @@ int main() {
     }
     gpio.LED_Off(LedColor::Blue);
 
-    while (1) {
+    while (1)
+    {
+        Drivers::Ftm::Capture capture{};
 
-        if (gpio.PB1_GetState()) {
+        const bool newCapture =
+            ftm.readCapture(capture);
+
+        button.update(
+            Interrupt::pit0Ticks,
+            capture.level,
+            capture.timestamp,
+            newCapture
+        );
+
+        if (button.consumePressed())
+        {
+            LOG_INFO(
+                "BUTTON PRESSED: %lu",
+                button.getPressTimestamp()
+            );
+
             gpio.LED_On(LedColor::Red);
-        } else {
-            gpio.LED_Off(LedColor::Red);
         }
-        
-        if (ftm2MeasurementReady) {
 
-            const uint64_t elapsedTicks = static_cast<uint64_t>(ftm2ReleaseTime - ftm2PressTime);
+        if (button.consumeReleased())
+        {
+            LOG_INFO(
+                "BUTTON RELEASED: %lu",
+                button.getReleaseTimestamp()
+            );
+
+            const uint32_t durationTicks =
+                button.getReleaseTimestamp()
+                - button.getPressTimestamp();
 
             const uint32_t durationMs =
-                static_cast<uint32_t>((elapsedTicks * 1000U) / ftm.getClockHz());
+                ftm.ticksToMs(durationTicks);
 
-            LOG_INFO("PRESS   = %lu", ftm2PressTime);
-            LOG_INFO("RELEASE = %lu", ftm2ReleaseTime);
-            LOG_INFO("DURATION = %lu ms", durationMs);
-            LOG_INFO("----------");
+            LOG_INFO(
+                "DURATION MS: %lu",
+                durationMs
+            );
 
-            ftm2MeasurementReady = false;
+            gpio.LED_Off(LedColor::Red);
         }
     }
 }
