@@ -2,9 +2,29 @@
 
 #include <cstdint>
 
+#include "MK22FN512.h"
+
 namespace Drivers
 {
     class Ftm
+    {
+    public:
+        Ftm(
+            FTM_Type* ftm,
+            uint32_t busClockHz
+        );
+
+        uint32_t getClockHz() const;
+
+        uint32_t ticksToMs(uint32_t ticks) const;
+
+    protected:
+        FTM_Type* ftm_;
+        uint32_t busClockHz_;
+    };
+
+
+    class FtmInCap : public Ftm
     {
     public:
 
@@ -14,20 +34,30 @@ namespace Drivers
             bool level;
         };
 
-        explicit Ftm(uint32_t busClockHz_);
+        FtmInCap(
+            FTM_Type* ftm,
+            uint32_t busClockHz
+        );
 
         void init();
-
-        uint32_t getClockHz() const;
 
         bool captureAvailable() const;
 
         bool readCapture(Capture& capture);
+    };
 
-        uint32_t ticksToMs(uint32_t ticks) const;
 
-    private:
+    class FtmPwm : public Ftm
+    {
+    public:
 
-        uint32_t busClockHz_;
+        FtmPwm(
+            FTM_Type* ftm,
+            uint32_t busClockHz
+        );
+
+        void init();
+
+        void setDutyCycle(uint8_t percent);
     };
 }

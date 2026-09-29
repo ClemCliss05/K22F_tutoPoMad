@@ -79,11 +79,18 @@ int main()
     // FTM2 Input Capture
     // =========================================================================
 
-    Drivers::Ftm ftm(clock.getBusClock());
+    Drivers::FtmInCap ftmInCap(
+        FTM2,
+        clock.getBusClock()
+    );
 
-    ftm.init();
+    ftmInCap.init();
 
     LOG_DEBUG("FTM2 OK");
+    LOG_INFO(
+        "FTM2 CLOCK: %lu",
+        ftmInCap.getClockHz()
+    );
 
 
     // =========================================================================
@@ -107,10 +114,10 @@ int main()
 
     while (1)
     {
-        Drivers::Ftm::Capture capture{};
+        Drivers::FtmInCap::Capture capture{};
 
         const bool newCapture =
-            ftm.readCapture(capture);
+            ftmInCap.readCapture(capture);
 
         button.update(
             Interrupt::pit0Ticks,
@@ -141,7 +148,7 @@ int main()
                 - button.getPressTimestamp();
 
             const uint32_t durationMs =
-                ftm.ticksToMs(durationTicks);
+                ftmInCap.ticksToMs(durationTicks);
 
             LOG_INFO(
                 "DURATION MS: %lu",
