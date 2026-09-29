@@ -6,6 +6,10 @@ namespace Drivers {
 
 class Pit {
   public:
+    /*
+     * PIT driver functions
+     */
+
     explicit Pit(uint32_t clockHz);
 
     void init();

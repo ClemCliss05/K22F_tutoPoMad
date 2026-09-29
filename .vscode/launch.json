@@ -21,6 +21,8 @@
             "runToEntryPoint": "main",
 
             "gdbPath": "/usr/bin/gdb-multiarch",
+            "toolchainPrefix": "arm-none-eabi",
+            "armToolchainPath": "/usr/bin",
 
             "preLaunchTask": "Build Firmware",
 

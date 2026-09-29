@@ -15,7 +15,7 @@ void Drivers::Uart::init() {
     SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK; // Enable clock for PORTE
     SIM->SCGC4 |= SIM_SCGC4_UART1_MASK; // Enable clock for UART1
 
-    // Set PE0 & PE1 to ALT3 (UART1_TX and UART1_RX)
+    // Set PTE0 & PTE1 to ALT3 (UART1_TX and UART1_RX)
     PORTE->PCR[0] &= ~PORT_PCR_MUX_MASK;
     PORTE->PCR[0] |= PORT_PCR_MUX(3);
     PORTE->PCR[1] &= ~PORT_PCR_MUX_MASK;

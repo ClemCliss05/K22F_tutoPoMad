@@ -6,6 +6,12 @@
 namespace Drivers {
 class Uart {
   public:
+    /*
+     * LED driver functions
+     * PTE0 -> UART1_TX
+     * PTE1 -> UART1_RX
+     */
+
     void init();
 
     bool isTxReady() const;

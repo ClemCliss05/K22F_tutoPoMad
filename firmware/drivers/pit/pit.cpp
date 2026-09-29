@@ -47,7 +47,7 @@ bool Pit::start() {
     PIT->CHANNEL[0].TFLG = PIT_TFLG_TIF_MASK;
 
     // Reset the software tick counter.
-    pit0Ticks = 0U;
+    Interrupt::pit0Ticks = 0U;
 
     // Enable PIT channel 0 interrupt.
     PIT->CHANNEL[0].TCTRL |= PIT_TCTRL_TIE_MASK;
@@ -63,7 +63,7 @@ void Pit::stop() {
 }
 
 uint32_t Pit::getTicks() const {
-    return pit0Ticks;
+    return Interrupt::pit0Ticks;
 }
 
 uint32_t Pit::getClockHz() const {
