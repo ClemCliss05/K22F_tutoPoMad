@@ -1,7 +1,8 @@
 #include "adc.hpp"
 #include "MK22FN512.h"
 
-void Drivers::Adc::init() {
+namespace Drivers {
+void Adc::init() {
     // Enable PORTB clock
     SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK;
 
@@ -42,7 +43,7 @@ void Drivers::Adc::init() {
     ADC0->SC1[0] |= ADC_SC1_ADCH(0x08);
 }
 
-uint16_t Drivers::Adc::read() {
+uint16_t Adc::read() {
     // Wait until conversion is complete
     while ((ADC0->SC1[0] & ADC_SC1_COCO_MASK) != ADC_SC1_COCO_MASK)
         ;
@@ -50,3 +51,8 @@ uint16_t Drivers::Adc::read() {
     // Return conversion result
     return ADC0->R[0];
 }
+
+uint8_t Adc::toPercent(uint16_t adcValue) {
+    return static_cast<uint8_t>((static_cast<uint32_t>(adcValue) * 100U) / 4095U);
+}
+} // namespace Drivers

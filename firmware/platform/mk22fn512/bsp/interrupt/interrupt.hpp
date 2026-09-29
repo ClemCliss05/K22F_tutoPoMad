@@ -2,31 +2,29 @@
 
 #include <cstdint>
 
-namespace Interrupt
-{
-    // -------------------------------------------------------------------------
-    // PIT0
-    // -------------------------------------------------------------------------
+namespace Interrupt {
+// -------------------------------------------------------------------------
+// PIT0
+// -------------------------------------------------------------------------
 
-    // System tick incremented every 1 ms by PIT0_IRQHandler().
-    extern volatile uint32_t pit0Ticks;
+// System tick incremented every 1 ms by PIT0_IRQHandler().
+extern volatile uint32_t pit0Ticks;
 
+// -------------------------------------------------------------------------
+// FTM2
+// -------------------------------------------------------------------------
 
-    // -------------------------------------------------------------------------
-    // FTM2
-    // -------------------------------------------------------------------------
+// Number of FTM2 counter overflows.
+extern volatile uint32_t ftm2OverflowCount;
 
-    // Number of FTM2 counter overflows.
-    extern volatile uint32_t ftm2OverflowCount;
+// Timestamp of the latest FTM2 capture.
+extern volatile uint32_t ftm2CaptureTime;
 
-    // Timestamp of the latest FTM2 capture.
-    extern volatile uint32_t ftm2CaptureTime;
+// Logic level of the captured signal.
+// false = LOW
+// true  = HIGH
+extern volatile bool ftm2CaptureLevel;
 
-    // Logic level of the captured signal.
-    // false = LOW
-    // true  = HIGH
-    extern volatile bool ftm2CaptureLevel;
-
-    // Set to true by the ISR when a new capture is available.
-    extern volatile bool ftm2CapturePending;
-}
+// Set to true by the ISR when a new capture is available.
+extern volatile bool ftm2CapturePending;
+} // namespace Interrupt

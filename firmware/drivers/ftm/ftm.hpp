@@ -4,60 +4,57 @@
 
 #include "MK22FN512.h"
 
-namespace Drivers
-{
-    class Ftm
-    {
-    public:
-        Ftm(
-            FTM_Type* ftm,
-            uint32_t busClockHz
-        );
+namespace Drivers {
+class Ftm {
+  public:
+    /*
+     * FTM driver functions
+     */
 
-        uint32_t getClockHz() const;
+    Ftm(FTM_Type *ftm, uint32_t busClockHz);
 
-        uint32_t ticksToMs(uint32_t ticks) const;
+    uint32_t getClockHz() const;
 
-    protected:
-        FTM_Type* ftm_;
-        uint32_t busClockHz_;
+    uint32_t ticksToMs(uint32_t ticks) const;
+
+  protected:
+    FTM_Type *ftm_;
+    uint32_t busClockHz_;
+};
+
+class FtmInCap : public Ftm {
+  public:
+    /*
+     * FTM input capture driver functions
+     * PTB18 -> FTM2_CH0
+     */
+
+    struct Capture {
+        uint32_t timestamp;
+        bool level;
     };
 
+    explicit FtmInCap(uint32_t busClockHz);
 
-    class FtmInCap : public Ftm
-    {
-    public:
+    void init();
 
-        struct Capture
-        {
-            uint32_t timestamp;
-            bool level;
-        };
+    bool captureAvailable() const;
 
-        FtmInCap(
-            FTM_Type* ftm,
-            uint32_t busClockHz
-        );
+    bool readCapture(Capture &capture);
+};
 
-        void init();
+class FtmPwm : public Ftm {
+  public:
+    /*
+     * FTM PWM driver functions
+     * PTD2 -> FTM3_CH2
+     * PTD3 -> FTM3_CH3
+     */
 
-        bool captureAvailable() const;
+    explicit FtmPwm(uint32_t busClockHz);
 
-        bool readCapture(Capture& capture);
-    };
+    void init();
 
-
-    class FtmPwm : public Ftm
-    {
-    public:
-
-        FtmPwm(
-            FTM_Type* ftm,
-            uint32_t busClockHz
-        );
-
-        void init();
-
-        void setDutyCycle(uint8_t percent);
-    };
-}
+    void setDutyCycle(uint8_t dutyPercent);
+};
+} // namespace Drivers

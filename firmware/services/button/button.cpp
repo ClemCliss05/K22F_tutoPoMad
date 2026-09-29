@@ -1,39 +1,17 @@
 #include "button.hpp"
 
-namespace Services
-{
+namespace Services {
 
-void Button::init()
-{
-    // Button idle state = HIGH.
-    // LOW = pressed.
-    stableState_ = true;
-    candidateState_ = true;
+Button::Button()
+    : stableState_(true), candidateState_(true), candidateSinceMs_(0U), candidateTimestamp_(0U),
+      pressedEvent_(false), releasedEvent_(false), pressTimestamp_(0U), releaseTimestamp_(0U) {}
 
-    candidateSinceMs_ = 0U;
-    candidateTimestamp_ = 0U;
-
-    pressedEvent_ = false;
-    releasedEvent_ = false;
-
-    pressTimestamp_ = 0U;
-    releaseTimestamp_ = 0U;
-}
-
-
-void Button::update(
-    uint32_t nowMs,
-    bool captureLevel,
-    uint32_t captureTimestamp,
-    bool newCapture
-)
-{
+void Button::update(uint32_t nowMs, bool captureLevel, uint32_t captureTimestamp, bool newCapture) {
     // -------------------------------------------------------------------------
     // New hardware capture
     // -------------------------------------------------------------------------
 
-    if (newCapture)
-    {
+    if (newCapture) {
         // New candidate state.
         candidateState_ = captureLevel;
 
@@ -44,29 +22,22 @@ void Button::update(
         candidateTimestamp_ = captureTimestamp;
     }
 
-
     // -------------------------------------------------------------------------
     // Debounce
     // -------------------------------------------------------------------------
 
-    if (candidateState_ != stableState_)
-    {
-        const uint32_t elapsedMs =
-            nowMs - candidateSinceMs_;
+    if (candidateState_ != stableState_) {
+        const uint32_t elapsedMs = nowMs - candidateSinceMs_;
 
-        if (elapsedMs >= DebounceTimeMs)
-        {
+        if (elapsedMs >= DebounceTimeMs) {
             // State is stable for 20 ms.
             stableState_ = candidateState_;
 
-            if (stableState_ == false)
-            {
+            if (stableState_ == false) {
                 // LOW = pressed.
                 pressTimestamp_ = candidateTimestamp_;
                 pressedEvent_ = true;
-            }
-            else
-            {
+            } else {
                 // HIGH = released.
                 releaseTimestamp_ = candidateTimestamp_;
                 releasedEvent_ = true;
@@ -75,17 +46,12 @@ void Button::update(
     }
 }
 
-
-bool Button::isPressed() const
-{
+bool Button::isPressed() const {
     return !stableState_;
 }
 
-
-bool Button::consumePressed()
-{
-    if (!pressedEvent_)
-    {
+bool Button::consumePressed() {
+    if (!pressedEvent_) {
         return false;
     }
 
@@ -93,11 +59,8 @@ bool Button::consumePressed()
     return true;
 }
 
-
-bool Button::consumeReleased()
-{
-    if (!releasedEvent_)
-    {
+bool Button::consumeReleased() {
+    if (!releasedEvent_) {
         return false;
     }
 
@@ -105,16 +68,12 @@ bool Button::consumeReleased()
     return true;
 }
 
-
-uint32_t Button::getPressTimestamp() const
-{
+uint32_t Button::getPressTimestamp() const {
     return pressTimestamp_;
 }
 
-
-uint32_t Button::getReleaseTimestamp() const
-{
+uint32_t Button::getReleaseTimestamp() const {
     return releaseTimestamp_;
 }
 
-}
+} // namespace Services

@@ -12,6 +12,7 @@ class Adc {
 
     void init(void);
     uint16_t read(void);
+    uint8_t toPercent(uint16_t adcValue);
 
   private:
 };

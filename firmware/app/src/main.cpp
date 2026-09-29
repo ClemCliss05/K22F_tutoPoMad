@@ -1,22 +1,25 @@
 #include "MK22FN512.h"
 
+// BSP platform
 #include "clock.hpp"
 #include "interrupt.hpp"
 
+// Drivers
+#include "adc.hpp"
 #include "ftm.hpp"
 #include "gpio.hpp"
 #include "pit.hpp"
 #include "uart.hpp"
 
+// Core
 #include "logger.hpp"
 #include "ringbuffer.hpp"
+
+// Services
+#include "delay.hpp"
 #include "uart_logger_backend.hpp"
 
-#include "button.hpp"
-
-
-int main()
-{
+int main() {
     // =========================================================================
     // Clock
     // =========================================================================
@@ -25,7 +28,6 @@ int main()
 
     clock.initOSC();
     clock.set48MHz();
-
 
     // =========================================================================
     // GPIO
@@ -38,7 +40,6 @@ int main()
 
     using LedColor = Drivers::Gpio::LedColor;
 
-
     // =========================================================================
     // UART + Logger
     // =========================================================================
@@ -50,18 +51,21 @@ int main()
 
     char loggerBuffer[128];
 
-    RingBuffer ringBuffer(
-        loggerBuffer,
-        sizeof(loggerBuffer)
-    );
+    RingBuffer ringBuffer(loggerBuffer, sizeof(loggerBuffer));
 
-    Logger logger(
-        ringBuffer,
-        uartBackend
-    );
+    Logger logger(ringBuffer, uartBackend);
 
     LOG_DEBUG("UART OK");
 
+    // =========================================================================
+    // ADC0
+    // =========================================================================
+
+    Drivers::Adc adc;
+
+    adc.init();
+
+    LOG_DEBUG("ADC0 OK");
 
     // =========================================================================
     // PIT0
@@ -74,33 +78,24 @@ int main()
 
     LOG_DEBUG("PIT0 OK");
 
+    // =========================================================================
+    // DELAY
+    // =========================================================================
+
+    Services::Delay delay(pit);
+
+    LOG_DEBUG("DELAY OK");
 
     // =========================================================================
-    // FTM2 Input Capture
+    // FTM3 PWM
     // =========================================================================
 
-    Drivers::FtmInCap ftmInCap(
-        FTM2,
-        clock.getBusClock()
-    );
+    Drivers::FtmPwm ftmPwm(clock.getBusClock());
 
-    ftmInCap.init();
+    ftmPwm.init();
 
     LOG_DEBUG("FTM2 OK");
-    LOG_INFO(
-        "FTM2 CLOCK: %lu",
-        ftmInCap.getClockHz()
-    );
-
-
-    // =========================================================================
-    // Button
-    // =========================================================================
-
-    Services::Button button;
-
-    button.init();
-
+    LOG_INFO("FTM2 CLOCK: %lu", ftmPwm.getClockHz());
 
     // =========================================================================
     // Main loop
@@ -112,50 +107,27 @@ int main()
     }
     gpio.LED_Off(LedColor::Blue);
 
-    while (1)
-    {
-        Drivers::FtmInCap::Capture capture{};
+    while (1) {
+        const uint16_t adcValue = adc.read();
+        const uint8_t dutyPercent = adc.toPercent(adcValue);
 
-        const bool newCapture =
-            ftmInCap.readCapture(capture);
+        LOG_INFO("ADC=%u DUTY=%u%%", adcValue, dutyPercent);
 
-        button.update(
-            Interrupt::pit0Ticks,
-            capture.level,
-            capture.timestamp,
-            newCapture
-        );
+        ftmPwm.setDutyCycle(dutyPercent);
 
-        if (button.consumePressed())
-        {
-            LOG_INFO(
-                "BUTTON PRESSED: %lu",
-                button.getPressTimestamp()
-            );
+        delay.waitMs(20);
 
-            gpio.LED_On(LedColor::Red);
-        }
+        // Test without ADC and a connected LED
+        // for (uint8_t duty = 0; duty <= 100; ++duty)
+        // {
+        //     ftmPwm.setDutyCycle(duty);
+        //     delay.waitMs(20);
+        // }
 
-        if (button.consumeReleased())
-        {
-            LOG_INFO(
-                "BUTTON RELEASED: %lu",
-                button.getReleaseTimestamp()
-            );
-
-            const uint32_t durationTicks =
-                button.getReleaseTimestamp()
-                - button.getPressTimestamp();
-
-            const uint32_t durationMs =
-                ftmInCap.ticksToMs(durationTicks);
-
-            LOG_INFO(
-                "DURATION MS: %lu",
-                durationMs
-            );
-
-            gpio.LED_Off(LedColor::Red);
-        }
+        // for (int duty = 99; duty > 0; --duty)
+        // {
+        //     ftmPwm.setDutyCycle(static_cast<uint8_t>(duty));
+        //     delay.waitMs(20);
+        // }
     }
 }
