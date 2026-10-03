@@ -1,12 +1,14 @@
+#include <math.h>
 #include "MK22FN512.h"
 
 // BSP platform
 #include "clock.hpp"
 #include "interrupt.hpp"
+#include "dwt.hpp"
 
 // Drivers
+#include "dac.hpp"
 #include "adc.hpp"
-#include "ftm.hpp"
 #include "gpio.hpp"
 #include "pit.hpp"
 #include "uart.hpp"
@@ -28,6 +30,14 @@ int main() {
 
     clock.initOSC();
     clock.set48MHz();
+
+    // =========================================================================
+    // DWT
+    // =========================================================================
+
+    Bsp::Dwt dwt;
+
+    dwt.init();
 
     // =========================================================================
     // GPIO
@@ -58,76 +68,105 @@ int main() {
     LOG_DEBUG("UART OK");
 
     // =========================================================================
+    // DAC0
+    // =========================================================================
+
+    Drivers::Dac dac;
+    dac.init();
+
+    LOG_DEBUG("DAC0 OK");
+
+    // =========================================================================
     // ADC0
     // =========================================================================
 
     Drivers::Adc adc;
-
     adc.init();
 
     LOG_DEBUG("ADC0 OK");
 
     // =========================================================================
-    // PIT0
+    // PIT0 SYSTEM
     // =========================================================================
 
-    Drivers::Pit pit(clock.getBusClock());
+    Drivers::PitSystem pitSystem(clock.getBusClock());
 
-    pit.init();
-    pit.start();
+    pitSystem.init();
+    pitSystem.start();
 
-    LOG_DEBUG("PIT0 OK");
+    LOG_DEBUG("PIT0 SYSTEM OK");
 
     // =========================================================================
     // DELAY
     // =========================================================================
 
-    Services::Delay delay(pit);
+    Services::Delay delay(pitSystem);
 
     LOG_DEBUG("DELAY OK");
 
     // =========================================================================
-    // FTM3 PWM
+    // PIT1 DAC
     // =========================================================================
 
-    Drivers::FtmPwm ftmPwm(clock.getBusClock());
+    Drivers::PitChannel pitDac(clock.getBusClock(),
+        Drivers::PitChannel::Channel::Channel1);
 
-    ftmPwm.init();
+    pitDac.init();
+    pitDac.startTicks(pitDac.microsecondsToTicks(200));
 
-    LOG_DEBUG("FTM2 OK");
-    LOG_INFO("FTM2 CLOCK: %lu", ftmPwm.getClockHz());
+    LOG_DEBUG("PIT1 DAC OK");
 
     // =========================================================================
     // Main loop
     // =========================================================================
 
+    // Start of the main loop
     gpio.LED_On(LedColor::Blue);
     for (volatile uint32_t i = 0; i < 5000000; i++) {
         __NOP();
     }
     gpio.LED_Off(LedColor::Blue);
 
+    // Sinusoidal variable
+    float 		angle, y;
+	uint16_t 	output;
+    angle = 0.0f;
+
+    // get the actual tick of pitDac
+    uint32_t nbPitDacInter = pitDac.getInterruptCount();
+
     while (1) {
-        const uint16_t adcValue = adc.read();
-        const uint8_t dutyPercent = adc.toPercent(adcValue);
+        // One sample every 200µs or more
+        if(nbPitDacInter != pitDac.getInterruptCount()){
+            // Update nb pitDac inter number
+            nbPitDacInter = pitDac.getInterruptCount();
 
-        LOG_INFO("ADC=%u DUTY=%u%%", adcValue, dutyPercent);
+            __disable_irq();
+            // Start measure of calculation time
+            uint32_t startCalcCycles = dwt.getCycles();
 
-        ftmPwm.setDutyCycle(dutyPercent);
+            // Increment angle value modulo 2*PI
+            angle = angle + 0.01f;
+            if (angle > 6.28f) angle = 0.0f;
 
-        delay.waitMs(20);
+            // Compute sinus(angle)
+            y = sinf(angle);
 
-        // Test without ADC and a connected LED
-        // for (uint8_t duty = 0; duty <= 100; ++duty)
-        // {
-        //     ftmPwm.setDutyCycle(duty);
-        //     delay.waitMs(20);
-        // }
+            // Offset and Scale output to DAC unsigned 12-bit
+            output = (uint16_t)(0x07FF + (int16_t)(0x07FF * y));
 
-        // for (int duty = 99; duty > 0; --duty)
-        // {
-        //     ftmPwm.setDutyCycle(static_cast<uint8_t>(duty));
-        //     delay.waitMs(20);
-        // }
+            // End measure of calculation time
+            uint32_t endCalcCycles = dwt.getCycles();
+            __enable_irq();
+
+            // Set DAC output
+            dac.write(output);
+
+            uint32_t calcCycles = endCalcCycles - startCalcCycles;
+            LOG_INFO("Inter n. %d -> Calcul time: %u cycles", 
+                nbPitDacInter,
+                calcCycles);
+            LOG_INFO("DAC value: %d", adc.read());
+        }
     }
 }
