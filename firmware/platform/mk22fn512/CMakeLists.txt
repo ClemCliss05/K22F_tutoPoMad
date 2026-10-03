@@ -22,6 +22,7 @@ target_sources(platform_mk22fn512 PRIVATE
 
     ${CMAKE_CURRENT_SOURCE_DIR}/bsp/clock/clock.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bsp/interrupt/interrupt.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bsp/dwt/dwt.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/startup/startup_MK22FN512.cpp
 
@@ -36,6 +37,7 @@ target_include_directories(platform_mk22fn512 PUBLIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/bsp/clock
     ${CMAKE_CURRENT_SOURCE_DIR}/bsp/interrupt
+    ${CMAKE_CURRENT_SOURCE_DIR}/bsp/dwt
 
     ${CMAKE_CURRENT_SOURCE_DIR}/cmsis/core
     ${CMAKE_CURRENT_SOURCE_DIR}/cmsis/device/inc
