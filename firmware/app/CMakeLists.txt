@@ -40,16 +40,6 @@ target_link_libraries(firmware PRIVATE
 )
 
 # ------------------------------------------------------------------------------
-# Disable heavy C++ runtime features
-# ------------------------------------------------------------------------------
-
-target_compile_options(firmware PRIVATE
-
-    $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
-    $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
-)
-
-# ------------------------------------------------------------------------------
 # Post-build actions
 # Generate .bin / .hex and print firmware size
 # ------------------------------------------------------------------------------

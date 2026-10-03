@@ -38,9 +38,9 @@ option(TESTS "Enable ASAN/UBSAN and tests" OFF)
 
 if(NOT ANALYSIS)
 
-    if(NOT DEFINED PLATFORM_CPU_FLAGS)
+    if(NOT DEFINED MCU_CPU_FLAGS)
         message(FATAL_ERROR
-            "CPU is not defined by the toolchain -> uncomment and complete line 16 of cmake/arm-gcc-toolchain.cmake"
+            "CPU is not defined by the toolchain -> uncomment and complete line 40 of cmake/arm-gcc-toolchain.cmake"
         )
     endif()
 
