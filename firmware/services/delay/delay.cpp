@@ -2,7 +2,7 @@
 
 namespace Services {
 
-Delay::Delay(Drivers::Pit &pit)
+Delay::Delay(Drivers::PitSystem &pit)
     : pit_(pit), startTick_(0U), durationTicks_(0U), active_(false), periodic_(false) {}
 
 bool Delay::startMs(uint32_t milliseconds) {
@@ -10,7 +10,7 @@ bool Delay::startMs(uint32_t milliseconds) {
         return false;
     }
 
-    startTick_ = pit_.getTicks();
+    startTick_ = pit_.getInterruptCount();
     durationTicks_ = milliseconds;
 
     active_ = true;
@@ -24,7 +24,7 @@ bool Delay::startPeriodicMs(uint32_t milliseconds) {
         return false;
     }
 
-    startTick_ = pit_.getTicks();
+    startTick_ = pit_.getInterruptCount();
     durationTicks_ = milliseconds;
 
     active_ = true;
@@ -38,9 +38,9 @@ void Delay::waitMs(uint32_t milliseconds) {
         return;
     }
 
-    const uint32_t startTick = pit_.getTicks();
+    const uint32_t startTick = pit_.getInterruptCount();
 
-    while ((pit_.getTicks() - startTick) < milliseconds) {
+    while ((pit_.getInterruptCount() - startTick) < milliseconds) {
     }
 }
 
@@ -49,7 +49,7 @@ bool Delay::expired() {
         return false;
     }
 
-    const uint32_t elapsed = pit_.getTicks() - startTick_;
+    const uint32_t elapsed = pit_.getInterruptCount() - startTick_;
 
     if (elapsed < durationTicks_) {
         return false;

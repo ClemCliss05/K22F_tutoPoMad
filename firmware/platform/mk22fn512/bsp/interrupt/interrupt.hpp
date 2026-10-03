@@ -7,8 +7,8 @@ namespace Interrupt {
 // PIT0
 // -------------------------------------------------------------------------
 
-// System tick incremented every 1 ms by PIT0_IRQHandler().
-extern volatile uint32_t pit0Ticks;
+// System tick incremented by PITx_IRQHandler().
+extern volatile uint64_t pitInterruptCount[4];
 
 // -------------------------------------------------------------------------
 // FTM2

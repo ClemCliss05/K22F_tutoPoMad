@@ -5,9 +5,9 @@ namespace Interrupt {
 // -------------------------------------------------------------------------
 // Shared interrupt state
 // -------------------------------------------------------------------------
-
-volatile uint32_t pit0Ticks = 0U;
-
+// PIT //
+volatile uint64_t pitInterruptCount[4] = {0U, 0U, 0U, 0U};
+// FTM //
 volatile uint32_t ftm2OverflowCount = 0U;
 volatile uint32_t ftm2CaptureTime = 0U;
 volatile bool ftm2CaptureLevel = false;
@@ -18,12 +18,45 @@ volatile bool ftm2CapturePending = false;
 // PIT0 interrupt handler
 // =============================================================================
 
-extern "C" void PIT0_IRQHandler() {
-    // Clear PIT interrupt flag.
-    PIT->CHANNEL[0].TFLG = PIT_TFLG_TIF_MASK;
+/**
+ * Common PIT interrupt handler.
+ *
+ * All PIT channels have the same interrupt behavior:
+ * clear the flag and increment the corresponding tick counter.
+ */
+static void handlePitInterrupt(uint8_t channel)
+{
+    if ((PIT->CHANNEL[channel].TFLG & PIT_TFLG_TIF_MASK) != 0U)
+    {
+        // Clear interrupt flag.
+        PIT->CHANNEL[channel].TFLG = PIT_TFLG_TIF_MASK;
 
-    // 1 ms system tick.
-    ++Interrupt::pit0Ticks;
+        ++Interrupt::pitInterruptCount[channel];
+    }
+}
+
+
+extern "C" void PIT0_IRQHandler()
+{
+    handlePitInterrupt(0U);
+}
+
+
+extern "C" void PIT1_IRQHandler()
+{
+    handlePitInterrupt(1U);
+}
+
+
+extern "C" void PIT2_IRQHandler()
+{
+    handlePitInterrupt(2U);
+}
+
+
+extern "C" void PIT3_IRQHandler()
+{
+    handlePitInterrupt(3U);
 }
 
 // =============================================================================
