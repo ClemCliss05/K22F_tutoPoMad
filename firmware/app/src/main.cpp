@@ -1,4 +1,3 @@
-#include <math.h>
 #include "MK22FN512.h"
 
 // BSP platform
@@ -127,46 +126,10 @@ int main() {
     }
     gpio.LED_Off(LedColor::Blue);
 
-    // Sinusoidal variable
-    float 		angle, y;
-	uint16_t 	output;
-    angle = 0.0f;
-
-    // get the actual tick of pitDac
-    uint32_t nbPitDacInter = pitDac.getInterruptCount();
-
     while (1) {
-        // One sample every 200µs or more
-        if(nbPitDacInter != pitDac.getInterruptCount()){
-            // Update nb pitDac inter number
-            nbPitDacInter = pitDac.getInterruptCount();
-
-            __disable_irq();
-            // Start measure of calculation time
-            uint32_t startCalcCycles = dwt.getCycles();
-
-            // Increment angle value modulo 2*PI
-            angle = angle + 0.01f;
-            if (angle > 6.28f) angle = 0.0f;
-
-            // Compute sinus(angle)
-            y = sinf(angle);
-
-            // Offset and Scale output to DAC unsigned 12-bit
-            output = (uint16_t)(0x07FF + (int16_t)(0x07FF * y));
-
-            // End measure of calculation time
-            uint32_t endCalcCycles = dwt.getCycles();
-            __enable_irq();
-
             // Set DAC output
-            dac.write(output);
+            dac.write(Interrupt::sinOutput);
 
-            uint32_t calcCycles = endCalcCycles - startCalcCycles;
-            LOG_INFO("Inter n. %d -> Calcul time: %u cycles", 
-                nbPitDacInter,
-                calcCycles);
             LOG_INFO("DAC value: %d", adc.read());
-        }
     }
 }
