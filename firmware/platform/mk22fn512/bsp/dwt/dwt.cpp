@@ -3,8 +3,7 @@
 
 namespace Bsp {
 
-void Dwt::init()
-{
+void Dwt::init() {
     // Enable Cortex-M trace/debug components.
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 
@@ -15,9 +14,8 @@ void Dwt::init()
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
-uint32_t Dwt::getCycles() const
-{
+uint32_t Dwt::getCycles() const {
     return DWT->CYCCNT;
 }
 
-}
+} // namespace Bsp

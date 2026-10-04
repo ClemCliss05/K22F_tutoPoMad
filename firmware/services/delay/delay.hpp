@@ -8,7 +8,7 @@ namespace Services {
 
 class Delay {
   public:
-    explicit Delay(Drivers::PitSystem& pit);
+    explicit Delay(Drivers::PitSystem &pit);
 
     /**
      * Start a one-shot delay.
@@ -51,7 +51,7 @@ class Delay {
     void stop();
 
   private:
-    Drivers::PitSystem& pit_;
+    Drivers::PitSystem &pit_;
 
     uint32_t startTick_;
     uint32_t durationTicks_;

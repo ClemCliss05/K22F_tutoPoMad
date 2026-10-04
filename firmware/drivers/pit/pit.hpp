@@ -9,16 +9,18 @@ namespace Drivers {
  *
  * Handles common PIT hardware operations.
  */
-class Pit
-{
-public:
+class Pit {
+  public:
     void init();
     void stop();
 
-    uint64_t getInterruptCount() const;
+    uint32_t getInterruptCount() const;
     uint32_t getClockHz() const;
 
-protected:
+    // Register a function called when this PIT channel interrupts.
+    void setCallback(void (*callback)(void *), void *context);
+
+  protected:
     Pit(uint32_t clockHz, uint8_t channel);
 
     bool configure(uint64_t ticks);
@@ -27,20 +29,17 @@ protected:
     uint8_t channel_;
 };
 
-
 /**
  * System PIT.
  *
  * PIT0 is reserved for the 1 ms system tick.
  */
-class PitSystem : public Pit
-{
-public:
+class PitSystem : public Pit {
+  public:
     explicit PitSystem(uint32_t clockHz);
 
     bool start();
 };
-
 
 /**
  * Generic PIT channel.
@@ -48,15 +47,9 @@ public:
  * PIT1, PIT2 and PIT3 can be used for application-specific
  * periodic events such as DAC scheduling.
  */
-class PitChannel : public Pit
-{
-public:
-    enum class Channel : uint8_t
-    {
-        Channel1 = 1,
-        Channel2 = 2,
-        Channel3 = 3
-    };
+class PitChannel : public Pit {
+  public:
+    enum class Channel : uint8_t { Channel1 = 1, Channel2 = 2, Channel3 = 3 };
 
     PitChannel(uint32_t clockHz, Channel channel);
 

@@ -2,12 +2,12 @@
 
 // BSP platform
 #include "clock.hpp"
-#include "interrupt.hpp"
 #include "dwt.hpp"
+#include "interrupt.hpp"
 
 // Drivers
-#include "dac.hpp"
 #include "adc.hpp"
+#include "dac.hpp"
 #include "gpio.hpp"
 #include "pit.hpp"
 #include "uart.hpp"
@@ -19,6 +19,37 @@
 // Services
 #include "delay.hpp"
 #include "uart_logger_backend.hpp"
+
+// C lib
+#include <math.h>
+
+namespace {
+
+float sinAngle = 0.0f;
+
+void generateSinSample(void *context) {
+    auto *dac = static_cast<Drivers::Dac *>(context);
+
+    constexpr float STEP = 0.01f;
+    constexpr float TWO_PI = 6.28f;
+
+    // Advance the phase.
+    sinAngle += STEP;
+
+    if (sinAngle > TWO_PI) {
+        sinAngle = 0.0f;
+    }
+
+    // Compute sine.
+    const float y = sinf(sinAngle);
+
+    // Convert [-1, +1] to unsigned 12-bit DAC range.
+    const uint16_t output = static_cast<uint16_t>(0x07FF + static_cast<int16_t>(0x07FF * y));
+
+    dac->write(output);
+}
+
+} // anonymous namespace
 
 int main() {
     // =========================================================================
@@ -107,10 +138,12 @@ int main() {
     // PIT1 DAC
     // =========================================================================
 
-    Drivers::PitChannel pitDac(clock.getBusClock(),
-        Drivers::PitChannel::Channel::Channel1);
+    Drivers::PitChannel pitDac(clock.getBusClock(), Drivers::PitChannel::Channel::Channel1);
 
     pitDac.init();
+
+    pitDac.setCallback(generateSinSample, &dac);
+
     pitDac.startTicks(pitDac.microsecondsToTicks(200));
 
     LOG_DEBUG("PIT1 DAC OK");
@@ -127,9 +160,8 @@ int main() {
     gpio.LED_Off(LedColor::Blue);
 
     while (1) {
-            // Set DAC output
-            dac.write(Interrupt::sinOutput);
-
-            LOG_INFO("DAC value: %d", adc.read());
+        // In reality, the CPU can sleep:
+        // __WFI();
+        LOG_INFO("DAC value: %d", adc.read());
     }
 }

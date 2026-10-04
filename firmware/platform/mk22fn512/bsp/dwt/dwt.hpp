@@ -5,9 +5,9 @@
 namespace Bsp {
 
 class Dwt {
-public:
+  public:
     void init();
     uint32_t getCycles() const;
 };
 
-}
+} // namespace Bsp
