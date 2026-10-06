@@ -5,7 +5,9 @@
 #include "pit.hpp"
 
 namespace Services {
-
+/**
+ * Provides blocking and non-blocking time delays.
+ */
 class Delay {
   public:
     explicit Delay(Drivers::PitSystem &pit);

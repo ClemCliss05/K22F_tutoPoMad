@@ -16,6 +16,9 @@ enum class LogLevel : std::uint8_t { Error, Warn, Info, Debug };
 #define LOG_LEVEL LOG_LEVEL_DEBUG
 #endif
 
+/**
+ * Provides application logging through a configurable backend.
+ */
 class Logger {
   public:
     Logger(RingBuffer &buffer, ILoggerBackend &backend);

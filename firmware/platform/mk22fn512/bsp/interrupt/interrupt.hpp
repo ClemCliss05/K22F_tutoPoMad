@@ -2,6 +2,9 @@
 
 #include <cstdint>
 
+/**
+ * Configures and manages K22F interrupt sources and NVIC settings.
+ */
 namespace Interrupt {
 
 // =============================================================================

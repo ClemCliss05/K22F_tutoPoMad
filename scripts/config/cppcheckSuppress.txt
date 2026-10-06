@@ -1,2 +1,3 @@
 functionStatic
 functionConst
+duplInheritedMember

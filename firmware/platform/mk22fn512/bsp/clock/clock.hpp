@@ -3,6 +3,9 @@
 #include <cstdint>
 
 namespace Bsp {
+/**
+ * Configures the K22F system clock and core frequency.
+ */
 class Clock {
   public:
     // initOSC() must be called before setXXXMHz()

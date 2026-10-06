@@ -3,6 +3,9 @@
 #include <cstdint>
 
 namespace Services {
+/**
+ * Provides high-level button state handling.
+ */
 class Button {
   public:
     static constexpr uint32_t DebounceTimeMs = 20U;

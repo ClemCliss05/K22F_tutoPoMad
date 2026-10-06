@@ -4,7 +4,9 @@
 #include "uart.hpp"
 
 namespace Services {
-
+/**
+ * Sends logger messages through a UART interface.
+ */
 class UartLoggerBackend : public ILoggerBackend {
   public:
     /**

@@ -3,11 +3,8 @@
 #include <cstdint>
 
 namespace Drivers {
-
 /**
- * Base class for all PIT channels.
- *
- * Handles common PIT hardware operations.
+ * Base class for configuring a K22F PIT timer channel.
  */
 class Pit {
   public:
@@ -30,8 +27,7 @@ class Pit {
 };
 
 /**
- * System PIT.
- *
+ * Provides the system time base using a periodic PIT interrupt.
  * PIT0 is reserved for the 1 ms system tick.
  */
 class PitSystem : public Pit {
@@ -42,10 +38,7 @@ class PitSystem : public Pit {
 };
 
 /**
- * Generic PIT channel.
- *
- * PIT1, PIT2 and PIT3 can be used for application-specific
- * periodic events such as DAC scheduling.
+ * Provides a configurable PIT channel for periodic timing operations.
  */
 class PitChannel : public Pit {
   public:

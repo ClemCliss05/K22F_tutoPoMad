@@ -2,6 +2,9 @@
 
 #include <cstddef>
 
+/**
+ * Provides a fixed-size FIFO buffer for non-blocking data handling.
+ */
 class RingBuffer {
   public:
     RingBuffer(char *buffer, size_t size);
