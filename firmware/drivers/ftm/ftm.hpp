@@ -5,56 +5,74 @@
 #include "MK22FN512.h"
 
 namespace Drivers {
-class Ftm {
-  public:
-    /*
-     * FTM driver functions
-     */
 
-    Ftm(FTM_Type *ftm, uint32_t busClockHz);
+class Ftm
+{
+public:
+    enum class Prescaler : uint8_t
+    {
+        Div1   = 0U,
+        Div2   = 1U,
+        Div4   = 2U,
+        Div8   = 3U,
+        Div16  = 4U,
+        Div32  = 5U,
+        Div64  = 6U,
+        Div128 = 7U
+    };
+
+    Ftm(FTM_Type* ftm,
+        uint32_t busClockHz,
+        Prescaler prescaler);
 
     uint32_t getClockHz() const;
-
     uint32_t ticksToMs(uint32_t ticks) const;
 
-  protected:
-    FTM_Type *ftm_;
+protected:
+    FTM_Type* ftm_;
     uint32_t busClockHz_;
+    Prescaler prescaler_;
 };
 
-class FtmInCap : public Ftm {
-  public:
-    /*
-     * FTM input capture driver functions
-     * PTB18 -> FTM2_CH0
-     */
+// -----------------------------------------------------------------------------
+// FtmInCap
+// -----------------------------------------------------------------------------
 
-    struct Capture {
+class FtmInCap : public Ftm
+{
+public:
+    struct Capture
+    {
         uint32_t timestamp;
         bool level;
     };
 
-    explicit FtmInCap(uint32_t busClockHz);
+    explicit FtmInCap(
+        uint32_t busClockHz,
+        Prescaler prescaler = Prescaler::Div16
+    );
 
     void init();
 
     bool captureAvailable() const;
-
-    bool readCapture(Capture &capture);
+    bool readCapture(Capture& capture);
 };
 
-class FtmPwm : public Ftm {
-  public:
-    /*
-     * FTM PWM driver functions
-     * PTD2 -> FTM3_CH2
-     * PTD3 -> FTM3_CH3
-     */
+// -----------------------------------------------------------------------------
+// FtmPwm
+// -----------------------------------------------------------------------------
 
-    explicit FtmPwm(uint32_t busClockHz);
+class FtmPwm : public Ftm
+{
+public:
+    explicit FtmPwm(
+        uint32_t busClockHz,
+        Prescaler prescaler = Prescaler::Div16
+    );
 
     void init();
 
     void setDutyCycle(uint8_t dutyPercent);
 };
+
 } // namespace Drivers

@@ -111,11 +111,14 @@ int main() {
     // PDB0
     // =========================================================================
 
-    Drivers::Pdb pdb(clock.getBusClock());
-    pdb.init();
+    Drivers::PdbDac pdbDac(
+        clock.getBusClock(),
+        Drivers::Pdb::Prescaler::Div128,
+        Drivers::Pdb::Multiplier::X1
+    );
 
-    // pdb generate
-    pdb.start(200U);
+    pdbDac.init();
+    pdbDac.start(200U);
     LOG_DEBUG("PDB OK");
 
     // =========================================================================
