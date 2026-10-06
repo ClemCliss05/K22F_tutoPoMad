@@ -7,22 +7,24 @@ add_library(drivers STATIC)
 
 target_sources(drivers PRIVATE
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/gpio/gpio.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/uart/uart.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/adc/adc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dac/dac.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/pit/pit.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ftm/ftm.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gpio/gpio.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/pdb/pdb.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/pit/pit.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/uart/uart.cpp
 )
 
 target_include_directories(drivers PUBLIC
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/gpio
-    ${CMAKE_CURRENT_SOURCE_DIR}/uart
     ${CMAKE_CURRENT_SOURCE_DIR}/adc
     ${CMAKE_CURRENT_SOURCE_DIR}/dac
-    ${CMAKE_CURRENT_SOURCE_DIR}/pit
     ${CMAKE_CURRENT_SOURCE_DIR}/ftm
+    ${CMAKE_CURRENT_SOURCE_DIR}/gpio
+    ${CMAKE_CURRENT_SOURCE_DIR}/pdb
+    ${CMAKE_CURRENT_SOURCE_DIR}/pit
+    ${CMAKE_CURRENT_SOURCE_DIR}/uart
 )
 
 target_link_libraries(drivers PUBLIC

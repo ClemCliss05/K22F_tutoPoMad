@@ -21,11 +21,11 @@ class Pit {
     void setCallback(void (*callback)(void *), void *context);
 
   protected:
-    Pit(uint32_t clockHz, uint8_t channel);
+    Pit(uint32_t busClockHz, uint8_t channel);
 
     bool configure(uint64_t ticks);
 
-    uint32_t clockHz_;
+    uint32_t busClockHz_;
     uint8_t channel_;
 };
 
@@ -36,7 +36,7 @@ class Pit {
  */
 class PitSystem : public Pit {
   public:
-    explicit PitSystem(uint32_t clockHz);
+    explicit PitSystem(uint32_t busClockHz);
 
     bool start();
 };
@@ -51,7 +51,7 @@ class PitChannel : public Pit {
   public:
     enum class Channel : uint8_t { Channel1 = 1, Channel2 = 2, Channel3 = 3 };
 
-    PitChannel(uint32_t clockHz, Channel channel);
+    PitChannel(uint32_t busClockHz, Channel channel);
 
     bool startTicks(uint64_t ticks);
 

@@ -9,6 +9,7 @@
 #include "adc.hpp"
 #include "dac.hpp"
 #include "gpio.hpp"
+#include "pdb.hpp"
 #include "pit.hpp"
 #include "uart.hpp"
 
@@ -103,8 +104,19 @@ int main() {
 
     Drivers::Dac dac;
     dac.init();
-
+    dac.write(500);
     LOG_DEBUG("DAC0 OK");
+
+    // =========================================================================
+    // PDB0
+    // =========================================================================
+
+    Drivers::Pdb pdb(clock.getBusClock());
+    pdb.init();
+
+    // pdb generate
+    pdb.start(200U);
+    LOG_DEBUG("PDB OK");
 
     // =========================================================================
     // ADC0
@@ -133,20 +145,6 @@ int main() {
     Services::Delay delay(pitSystem);
 
     LOG_DEBUG("DELAY OK");
-
-    // =========================================================================
-    // PIT1 DAC
-    // =========================================================================
-
-    Drivers::PitChannel pitDac(clock.getBusClock(), Drivers::PitChannel::Channel::Channel1);
-
-    pitDac.init();
-
-    pitDac.setCallback(generateSinSample, &dac);
-
-    pitDac.startTicks(pitDac.microsecondsToTicks(200));
-
-    LOG_DEBUG("PIT1 DAC OK");
 
     // =========================================================================
     // Main loop

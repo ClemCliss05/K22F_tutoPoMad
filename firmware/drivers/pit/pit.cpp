@@ -5,7 +5,7 @@
 
 namespace Drivers {
 
-Pit::Pit(uint32_t clockHz, uint8_t channel) : clockHz_(clockHz), channel_(channel) {}
+Pit::Pit(uint32_t busClockHz, uint8_t channel) : busClockHz_(busClockHz), channel_(channel) {}
 
 void Pit::init() {
     // Enable PIT peripheral clock.
@@ -77,7 +77,7 @@ uint32_t Pit::getInterruptCount() const {
 }
 
 uint32_t Pit::getClockHz() const {
-    return clockHz_;
+    return busClockHz_;
 }
 
 void Pit::setCallback(void (*callback)(void *), void *context) {
@@ -88,14 +88,14 @@ void Pit::setCallback(void (*callback)(void *), void *context) {
 // PitSystem
 // -----------------------------------------------------------------------------
 
-PitSystem::PitSystem(uint32_t clockHz) : Pit(clockHz, 0U) {}
+PitSystem::PitSystem(uint32_t busClockHz) : Pit(busClockHz, 0U) {}
 
 bool PitSystem::start() {
     // PIT0 is the system tick: 1 ms period.
     // Example: PIT clock = 48 MHz
     // 1 ms = 48,000 PIT clock ticks
     // PIT0 generates an interruption every ms
-    const uint64_t ticks = (static_cast<uint64_t>(clockHz_) + 999ULL) / 1000ULL;
+    const uint64_t ticks = (static_cast<uint64_t>(busClockHz_) + 999ULL) / 1000ULL;
 
     Interrupt::pitInterruptCount[0] = 0U;
 
@@ -106,8 +106,8 @@ bool PitSystem::start() {
 // PitChannel
 // -----------------------------------------------------------------------------
 
-PitChannel::PitChannel(uint32_t clockHz, Channel channel)
-    : Pit(clockHz, static_cast<uint8_t>(channel)) {}
+PitChannel::PitChannel(uint32_t busClockHz, Channel channel)
+    : Pit(busClockHz, static_cast<uint8_t>(channel)) {}
 
 bool PitChannel::startTicks(uint64_t ticks) {
     Interrupt::pitInterruptCount[channel_] = 0U;
@@ -123,7 +123,7 @@ uint64_t PitChannel::microsecondsToTicks(uint32_t us) const {
      * Integer division would truncate fractional ticks
      * Adding (1'000'000 - 1) rounds the result up,
      */
-    return (static_cast<uint64_t>(us) * static_cast<uint64_t>(clockHz_) + 999'999ULL) /
+    return (static_cast<uint64_t>(us) * static_cast<uint64_t>(busClockHz_) + 999'999ULL) /
            1'000'000ULL;
 }
 
@@ -131,12 +131,12 @@ uint32_t PitChannel::ticksToMicroseconds(uint64_t ticks) const {
     /*
      * Rounded conversion:
      *
-     * us = ticks * 1,000,000 / clocks
-     * Integer division would truncate fractional microseconds
-     * Adding (1'000'000 - 1) rounds the result up,
+     * us = ticks * 1,000,000 / clock
+     * Integer division would truncate fractional microseconds.
+     * Adding (1,000,000 - 1) rounds the result up.
      */
-    return static_cast<uint64_t>((ticks * 1'000'000ULL + 999'999ULL) /
-                                 static_cast<uint64_t>(clockHz_));
+    return static_cast<uint32_t>((ticks * 1'000'000ULL + 999'999ULL) /
+                                 static_cast<uint64_t>(busClockHz_));
 }
 
 } // namespace Drivers

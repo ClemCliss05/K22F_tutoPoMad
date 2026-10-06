@@ -13,10 +13,10 @@ void Dac::init() {
 
     // Enable DAC0 & selects DACREF_2 = Vdda = 3.3V
     // DAC software trigger is selected.
-    DAC0->C0 |= DAC_C0_DACEN_MASK | DAC_C0_DACRFS_MASK | DAC_C0_DACTRGSEL_MASK;
+    DAC0->C0 |= DAC_C0_DACEN_MASK | DAC_C0_DACRFS_MASK;
 
-    // // hardware trigger is selected
-    // DAC0->C0 &= ~DAC_C0_DACTRGSEL_MASK;
+    // hardware trigger is selected
+    DAC0->C0 &= ~DAC_C0_DACTRGSEL_MASK;
 }
 
 void Dac::write(uint16_t value) {
