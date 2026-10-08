@@ -2,14 +2,10 @@
 
 // BSP platform
 #include "clock.hpp"
-#include "dwt.hpp"
-#include "interrupt.hpp"
 
 // Drivers
-#include "adc.hpp"
-#include "dac.hpp"
+#include "dma.hpp"
 #include "gpio.hpp"
-#include "pdb.hpp"
 #include "pit.hpp"
 #include "uart.hpp"
 
@@ -18,39 +14,39 @@
 #include "ringbuffer.hpp"
 
 // Services
-#include "delay.hpp"
 #include "uart_logger_backend.hpp"
+#include "delay.hpp"
 
 // C lib
 #include <math.h>
 
-namespace {
+// namespace {
 
-float sinAngle = 0.0f;
+// float sinAngle = 0.0f;
 
-void generateSinSample(void *context) {
-    auto *dac = static_cast<Drivers::Dac *>(context);
+// void generateSinSample(void *context) {
+//     auto *dac = static_cast<Drivers::Dac *>(context);
 
-    constexpr float STEP = 0.01f;
-    constexpr float TWO_PI = 6.28f;
+//     constexpr float STEP = 0.01f;
+//     constexpr float TWO_PI = 6.28f;
 
-    // Advance the phase.
-    sinAngle += STEP;
+//     // Advance the phase.
+//     sinAngle += STEP;
 
-    if (sinAngle > TWO_PI) {
-        sinAngle = 0.0f;
-    }
+//     if (sinAngle > TWO_PI) {
+//         sinAngle = 0.0f;
+//     }
 
-    // Compute sine.
-    const float y = sinf(sinAngle);
+//     // Compute sine.
+//     const float y = sinf(sinAngle);
 
-    // Convert [-1, +1] to unsigned 12-bit DAC range.
-    const uint16_t output = static_cast<uint16_t>(0x07FF + static_cast<int16_t>(0x07FF * y));
+//     // Convert [-1, +1] to unsigned 12-bit DAC range.
+//     const uint16_t output = static_cast<uint16_t>(0x07FF + static_cast<int16_t>(0x07FF * y));
 
-    dac->write(output);
-}
+//     dac->write(output);
+// }
 
-} // anonymous namespace
+// } // anonymous namespace
 
 int main() {
     // =========================================================================
@@ -61,14 +57,6 @@ int main() {
 
     clock.initOSC();
     clock.set48MHz();
-
-    // =========================================================================
-    // DWT
-    // =========================================================================
-
-    Bsp::Dwt dwt;
-
-    dwt.init();
 
     // =========================================================================
     // GPIO
@@ -82,7 +70,7 @@ int main() {
     using LedColor = Drivers::Gpio::LedColor;
 
     // =========================================================================
-    // UART + Logger
+    // UART + Logger + RingBuffer
     // =========================================================================
 
     Drivers::Uart uart;
@@ -97,38 +85,6 @@ int main() {
     Logger logger(ringBuffer, uartBackend);
 
     LOG_DEBUG("UART OK");
-
-    // =========================================================================
-    // DAC0
-    // =========================================================================
-
-    Drivers::Dac dac;
-    dac.init();
-    dac.write(500);
-    LOG_DEBUG("DAC0 OK");
-
-    // =========================================================================
-    // PDB0
-    // =========================================================================
-
-    Drivers::PdbDac pdbDac(
-        clock.getBusClock(),
-        Drivers::Pdb::Prescaler::Div128,
-        Drivers::Pdb::Multiplier::X1
-    );
-
-    pdbDac.init();
-    pdbDac.start(200U);
-    LOG_DEBUG("PDB OK");
-
-    // =========================================================================
-    // ADC0
-    // =========================================================================
-
-    Drivers::Adc adc;
-    adc.init();
-
-    LOG_DEBUG("ADC0 OK");
 
     // =========================================================================
     // PIT0 SYSTEM
@@ -150,6 +106,29 @@ int main() {
     LOG_DEBUG("DELAY OK");
 
     // =========================================================================
+    // DMA
+    // =========================================================================
+
+    Drivers::Dma dma(Drivers::Dma::Channel::Channel0);
+    uint16_t srcBuf[8] = {100, 200, 300, 400, 500, 600, 700, 800};
+    uint16_t dstBuf[8] = {0};
+
+    dma.configureMemoryToMemory(srcBuf, dstBuf, 8);
+    dma.start();
+
+    // VERIFICATION
+    while (!dma.isComplete()) {
+        LOG_INFO("CITER = %d", dma.getCurrentIteration());
+        dma.start();
+    }
+
+    for (uint8_t i = 0; i < 8; ++i) {
+        LOG_INFO("dstBuf[%d] = %d", i, dstBuf[i]);
+    }
+
+    LOG_INFO("DMA transfer completed");
+
+    // =========================================================================
     // Main loop
     // =========================================================================
 
@@ -162,7 +141,6 @@ int main() {
 
     while (1) {
         // In reality, the CPU can sleep:
-        // __WFI();
-        LOG_INFO("DAC value: %d", adc.read());
+        __WFI();
     }
 }
