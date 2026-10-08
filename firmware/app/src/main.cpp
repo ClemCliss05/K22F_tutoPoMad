@@ -4,6 +4,7 @@
 #include "clock.hpp"
 
 // Drivers
+#include "adc.hpp"
 #include "dac.hpp"
 #include "dma.hpp"
 #include "gpio.hpp"
@@ -85,7 +86,7 @@ int main() {
 
     Logger logger(ringBuffer, uartBackend);
 
-    LOG_DEBUG("UART OK");
+    LOG_INFO("UART OK");
 
     // =========================================================================
     // PIT0 SYSTEM
@@ -96,7 +97,7 @@ int main() {
     pitSystem.init();
     pitSystem.start();
 
-    LOG_DEBUG("PIT0 SYSTEM OK");
+    LOG_INFO("PIT0 SYSTEM OK");
 
     // =========================================================================
     // DELAY
@@ -104,7 +105,16 @@ int main() {
 
     Services::Delay delay(pitSystem);
 
-    LOG_DEBUG("DELAY OK");
+    LOG_INFO("DELAY OK");
+
+    // =========================================================================
+    // ADC
+    // =========================================================================
+
+    Drivers::Adc adc;
+    adc.init();
+
+    LOG_INFO("ADC OK");
 
     // =========================================================================
     // DMA
@@ -119,49 +129,54 @@ int main() {
     // =========================================================================
 
     Drivers::Dac dac;
-    dac.initFIFO();
+    dac.initFifo();
+    dac.enableSoftwareTrigger();
 
     LOG_INFO("DAC OK");
+    
+    uint16_t waveform[16] = {
+        1000, 1500, 2000, 2500,
+        3000, 3500, 4000, 3500,
+        3000, 2500, 2000, 1500,
+        1000,  500,  200,  500
+    };
 
-    LOG_INFO(
-        "After init: C1=0x%02X C2=0x%02X SR=0x%02X",
-        DAC0->C1,
-        DAC0->C2,
-        DAC0->SR
-    );
-
-    dac.writeBuffer(1000);
-
-    LOG_INFO(
-        "After 1: C1=0x%02X C2=0x%02X SR=0x%02X",
-        DAC0->C1,
-        DAC0->C2,
-        DAC0->SR
-    );
-    dac.writeBuffer(2000);
-    LOG_INFO(
-        "After 2: C1=0x%02X C2=0x%02X SR=0x%02X",
-        DAC0->C1,
-        DAC0->C2,
-        DAC0->SR
-    );
-    dac.writeBuffer(3000);
-    LOG_INFO(
-        "After 3: C1=0x%02X C2=0x%02X SR=0x%02X",
-        DAC0->C1,
-        DAC0->C2,
-        DAC0->SR
-    );
-    dac.writeBuffer(4000);
-    LOG_INFO(
-        "After 4: C1=0x%02X C2=0x%02X SR=0x%02X",
-        DAC0->C1,
-        DAC0->C2,
-        DAC0->SR
+    dma.configureMemoryToPeripheral(
+        waveform,
+        dac.fifoAddress(),
+        4
     );
 
-    for(uint8_t i = 0; i < 16; i++){
-        LOG_INFO("DAC0->DAT[%d] = %d", i, DAC0->DAT[i]);
+    for (uint8_t i = 0; i < 4; i++) {
+        dma.start();
+
+        LOG_DEBUG(
+            "Transfer %d: CITER=%d",
+            i + 1,
+            dma.getCurrentIteration()
+        );
+    }
+
+    LOG_DEBUG("DACoutput before trigger = %d", adc.read());
+
+    if(dma.isComplete()) {
+        for (uint8_t i = 0; i < 4; i++) {
+            uint16_t value =
+                static_cast<uint16_t>(DAC0->DAT[i].DATL) |
+                (static_cast<uint16_t>(DAC0->DAT[i].DATH) << 8);
+
+            LOG_DEBUG("DAC[%d] = %d", i, value);
+
+            dac.softwareTrigger();
+            delay.waitMs(500);
+            LOG_DEBUG(
+                "C2=0x%02X SR=0x%02X",
+                DAC0->C2,
+                DAC0->SR
+            );
+            LOG_DEBUG("DACoutput = %d", adc.read());
+            delay.waitMs(500);
+        }
     }
 
     // =========================================================================

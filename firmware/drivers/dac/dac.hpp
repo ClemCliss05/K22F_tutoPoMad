@@ -14,11 +14,12 @@ class Dac {
     void init();
     void write(uint16_t value);
 
-    void initFIFO();
-    void enableBuffer();
-    void writeBuffer(uint16_t value);
+    void initFifo();
+    void writeFifo(uint16_t value);
+    volatile uint16_t* fifoAddress();
 
-    void trigger();
+    void enableSoftwareTrigger();
+    void softwareTrigger();
 
   private:
     // 12-bit DAC
