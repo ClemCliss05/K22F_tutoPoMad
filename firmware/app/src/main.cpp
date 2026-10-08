@@ -4,6 +4,7 @@
 #include "clock.hpp"
 
 // Drivers
+#include "dac.hpp"
 #include "dma.hpp"
 #include "gpio.hpp"
 #include "pit.hpp"
@@ -110,23 +111,58 @@ int main() {
     // =========================================================================
 
     Drivers::Dma dma(Drivers::Dma::Channel::Channel0);
-    uint16_t srcBuf[8] = {100, 200, 300, 400, 500, 600, 700, 800};
-    uint16_t dstBuf = 0;
 
-    dma.configureMemoryToPeripheral(srcBuf, &dstBuf, 8);
+    LOG_INFO("DMA OK");
 
-    // VERIFICATION
-    while (!dma.isComplete()) {
-        dma.start();
+    // =========================================================================
+    // DAC
+    // =========================================================================
 
-        LOG_INFO(
-            "CITER = %d, dstBuf = %d",
-            dma.getCurrentIteration(),
-            dstBuf
-        );
+    Drivers::Dac dac;
+    dac.initFIFO();
+
+    LOG_INFO("DAC OK");
+
+    LOG_INFO(
+        "After init: C1=0x%02X C2=0x%02X SR=0x%02X",
+        DAC0->C1,
+        DAC0->C2,
+        DAC0->SR
+    );
+
+    dac.writeBuffer(1000);
+
+    LOG_INFO(
+        "After 1: C1=0x%02X C2=0x%02X SR=0x%02X",
+        DAC0->C1,
+        DAC0->C2,
+        DAC0->SR
+    );
+    dac.writeBuffer(2000);
+    LOG_INFO(
+        "After 2: C1=0x%02X C2=0x%02X SR=0x%02X",
+        DAC0->C1,
+        DAC0->C2,
+        DAC0->SR
+    );
+    dac.writeBuffer(3000);
+    LOG_INFO(
+        "After 3: C1=0x%02X C2=0x%02X SR=0x%02X",
+        DAC0->C1,
+        DAC0->C2,
+        DAC0->SR
+    );
+    dac.writeBuffer(4000);
+    LOG_INFO(
+        "After 4: C1=0x%02X C2=0x%02X SR=0x%02X",
+        DAC0->C1,
+        DAC0->C2,
+        DAC0->SR
+    );
+
+    for(uint8_t i = 0; i < 16; i++){
+        LOG_INFO("DAC0->DAT[%d] = %d", i, DAC0->DAT[i]);
     }
-
-    LOG_INFO("DMA transfer completed");
 
     // =========================================================================
     // Main loop
