@@ -111,19 +111,19 @@ int main() {
 
     Drivers::Dma dma(Drivers::Dma::Channel::Channel0);
     uint16_t srcBuf[8] = {100, 200, 300, 400, 500, 600, 700, 800};
-    uint16_t dstBuf[8] = {0};
+    uint16_t dstBuf = 0;
 
-    dma.configureMemoryToMemory(srcBuf, dstBuf, 8);
-    dma.start();
+    dma.configureMemoryToPeripheral(srcBuf, &dstBuf, 8);
 
     // VERIFICATION
     while (!dma.isComplete()) {
-        LOG_INFO("CITER = %d", dma.getCurrentIteration());
         dma.start();
-    }
 
-    for (uint8_t i = 0; i < 8; ++i) {
-        LOG_INFO("dstBuf[%d] = %d", i, dstBuf[i]);
+        LOG_INFO(
+            "CITER = %d, dstBuf = %d",
+            dma.getCurrentIteration(),
+            dstBuf
+        );
     }
 
     LOG_INFO("DMA transfer completed");

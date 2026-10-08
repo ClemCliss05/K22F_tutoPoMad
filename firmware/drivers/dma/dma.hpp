@@ -39,6 +39,13 @@ class Dma {
         T* destination,
         uint16_t elementCount);
 
+    // Configure a memory-to-peripheral transfer with the variable type T.
+    template<typename T>
+    void configureMemoryToPeripheral(
+        const T* source,
+        volatile T* destination,
+        uint16_t elementCount);
+
     // Trigger one DMA service request.
     void start();
 
