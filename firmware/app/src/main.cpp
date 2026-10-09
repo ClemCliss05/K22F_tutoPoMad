@@ -8,6 +8,7 @@
 #include "dac.hpp"
 #include "dma.hpp"
 #include "gpio.hpp"
+#include "pdb.hpp"
 #include "pit.hpp"
 #include "uart.hpp"
 
@@ -21,34 +22,6 @@
 
 // C lib
 #include <math.h>
-
-// namespace {
-
-// float sinAngle = 0.0f;
-
-// void generateSinSample(void *context) {
-//     auto *dac = static_cast<Drivers::Dac *>(context);
-
-//     constexpr float STEP = 0.01f;
-//     constexpr float TWO_PI = 6.28f;
-
-//     // Advance the phase.
-//     sinAngle += STEP;
-
-//     if (sinAngle > TWO_PI) {
-//         sinAngle = 0.0f;
-//     }
-
-//     // Compute sine.
-//     const float y = sinf(sinAngle);
-
-//     // Convert [-1, +1] to unsigned 12-bit DAC range.
-//     const uint16_t output = static_cast<uint16_t>(0x07FF + static_cast<int16_t>(0x07FF * y));
-
-//     dac->write(output);
-// }
-
-// } // anonymous namespace
 
 int main() {
     // =========================================================================
@@ -130,9 +103,18 @@ int main() {
 
     Drivers::Dac dac;
     dac.initFifo();
-    dac.enableSoftwareTrigger();
 
     LOG_INFO("DAC OK");
+
+    // =========================================================================
+    // PDB
+    // =========================================================================
+
+    // pdbClk = 48e6 / (128 * 40) = 9375
+    Drivers::PdbDac pdbDac(clock.getBusClock(), Drivers::Pdb::Prescaler::Div128, Drivers::Pdb::Multiplier::X40);
+    pdbDac.init();
+
+    LOG_INFO("PDB OK");
     
     uint16_t waveform[16] = {
         1000, 1500, 2000, 2500,
@@ -144,10 +126,10 @@ int main() {
     dma.configureMemoryToPeripheral(
         waveform,
         dac.fifoAddress(),
-        4
+        16
     );
 
-    for (uint8_t i = 0; i < 4; i++) {
+    for (uint8_t i = 0; i < 16; i++) {
         dma.start();
 
         LOG_DEBUG(
@@ -157,25 +139,21 @@ int main() {
         );
     }
 
-    LOG_DEBUG("DACoutput before trigger = %d", adc.read());
+    LOG_DEBUG("DACoutput before trigger from PDB = %d", adc.read());
+
+    if (!pdbDac.start(500000U)) {
+        LOG_ERROR("PDB configuration failed");
+    }
+
+    LOG_DEBUG("PDB DAC trigger started");
 
     if(dma.isComplete()) {
-        for (uint8_t i = 0; i < 4; i++) {
+        for (uint8_t i = 0; i < 16; i++) {
             uint16_t value =
                 static_cast<uint16_t>(DAC0->DAT[i].DATL) |
                 (static_cast<uint16_t>(DAC0->DAT[i].DATH) << 8);
 
             LOG_DEBUG("DAC[%d] = %d", i, value);
-
-            dac.softwareTrigger();
-            delay.waitMs(500);
-            LOG_DEBUG(
-                "C2=0x%02X SR=0x%02X",
-                DAC0->C2,
-                DAC0->SR
-            );
-            LOG_DEBUG("DACoutput = %d", adc.read());
-            delay.waitMs(500);
         }
     }
 
@@ -183,15 +161,26 @@ int main() {
     // Main loop
     // =========================================================================
 
-    // Start of the main loop
-    gpio.LED_On(LedColor::Blue);
-    for (volatile uint32_t i = 0; i < 5000000; i++) {
-        __NOP();
-    }
-    gpio.LED_Off(LedColor::Blue);
+    // // Start of the main loop
+    // gpio.LED_On(LedColor::Blue);
+    // for (volatile uint32_t i = 0; i < 5000000; i++) {
+    //     __NOP();
+    // }
+    // gpio.LED_Off(LedColor::Blue);
+    delay.startPeriodicMs(100);
 
     while (1) {
-        // In reality, the CPU can sleep:
-        __WFI();
+        // // In reality, the CPU can sleep:
+        // __WFI();
+        if(delay.expired()){
+            LOG_DEBUG(
+                "CNT=%u MOD=%u DACINT=%u C2=0x%02X ADC=%u",
+                PDB0->CNT,
+                PDB0->MOD,
+                PDB0->DAC[0].INT,
+                DAC0->C2,
+                adc.read()
+            );
+        }
     }
 }

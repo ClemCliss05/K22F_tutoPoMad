@@ -52,11 +52,11 @@ bool Pdb::configure(uint64_t ticks) {
     // PDB counter period: reaches MOD, then resets to 0.
     PDB0->MOD = value & PDB_MOD_MOD_MASK;
 
+    // Enable the PDB before requesting the register load.
+    PDB0->SC |= PDB_SC_PDBEN_MASK;
+
     // Load buffered values.
     PDB0->SC |= PDB_SC_LDOK_MASK;
-
-    // Enable PDB.
-    PDB0->SC |= PDB_SC_PDBEN_MASK;
 
     // Start/restart counter.
     PDB0->SC |= PDB_SC_SWTRIG_MASK;
