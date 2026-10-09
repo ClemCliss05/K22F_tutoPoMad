@@ -16,7 +16,7 @@ class Dac {
 
     void initFifo();
     void writeFifo(uint16_t value);
-    volatile uint16_t* fifoAddress();
+    volatile uint16_t *fifoAddress();
 
     void enableSoftwareTrigger();
     void softwareTrigger();

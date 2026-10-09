@@ -33,18 +33,13 @@ class Dma {
     explicit Dma(Channel channel);
 
     // Configure a memory-to-memory transfer with the variable type T.
-    template<typename T>
-    void configureMemoryToMemory(
-        const T* source,
-        T* destination,
-        uint16_t elementCount);
+    template <typename T>
+    void configureMemoryToMemory(const T *source, T *destination, uint16_t elementCount);
 
     // Configure a memory-to-peripheral transfer with the variable type T.
-    template<typename T>
-    void configureMemoryToPeripheral(
-        const T* source,
-        volatile T* destination,
-        uint16_t elementCount);
+    template <typename T>
+    void configureMemoryToPeripheral(const T *source, volatile T *destination,
+                                     uint16_t elementCount);
 
     // Trigger one DMA service request.
     void start();
@@ -62,8 +57,7 @@ class Dma {
     uint8_t channel_;
 
     // Return the DMA transfer-size encoding for the given C++ type.
-    template<typename T>
-    static constexpr uint8_t dmaTransferSize();
+    template <typename T> static constexpr uint8_t dmaTransferSize();
 };
 
 } // namespace Drivers

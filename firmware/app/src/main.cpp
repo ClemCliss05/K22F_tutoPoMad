@@ -17,8 +17,8 @@
 #include "ringbuffer.hpp"
 
 // Services
-#include "uart_logger_backend.hpp"
 #include "delay.hpp"
+#include "uart_logger_backend.hpp"
 
 // C lib
 #include <math.h>
@@ -55,9 +55,9 @@ int main() {
 
     char loggerBuffer[128];
 
-    RingBuffer ringBuffer(loggerBuffer, sizeof(loggerBuffer));
+    Core::RingBuffer ringBuffer(loggerBuffer, sizeof(loggerBuffer));
 
-    Logger logger(ringBuffer, uartBackend);
+    Core::Logger logger(ringBuffer, uartBackend);
 
     LOG_INFO("UART OK");
 
@@ -111,47 +111,35 @@ int main() {
     // =========================================================================
 
     // pdbClk = 48e6 / (128 * 40) = 9375
-    Drivers::PdbDac pdbDac(clock.getBusClock(), Drivers::Pdb::Prescaler::Div128, Drivers::Pdb::Multiplier::X40);
+    Drivers::PdbDac pdbDac(clock.getBusClock(), Drivers::Pdb::Prescaler::Div128,
+                           Drivers::Pdb::Multiplier::X40);
     pdbDac.init();
 
     LOG_INFO("PDB OK");
-    
-    uint16_t waveform[16] = {
-        1000, 1500, 2000, 2500,
-        3000, 3500, 4000, 3500,
-        3000, 2500, 2000, 1500,
-        1000,  500,  200,  500
-    };
 
-    dma.configureMemoryToPeripheral(
-        waveform,
-        dac.fifoAddress(),
-        16
-    );
+    uint16_t waveform[16] = {1000, 1500, 2000, 2500, 3000, 3500, 4000, 3500,
+                             3000, 2500, 2000, 1500, 1000, 500,  200,  500};
+
+    dma.configureMemoryToPeripheral(waveform, dac.fifoAddress(), 16);
 
     for (uint8_t i = 0; i < 16; i++) {
         dma.start();
 
-        LOG_DEBUG(
-            "Transfer %d: CITER=%d",
-            i + 1,
-            dma.getCurrentIteration()
-        );
+        LOG_DEBUG("Transfer %d: CITER=%d", i + 1, dma.getCurrentIteration());
     }
 
     LOG_DEBUG("DACoutput before trigger from PDB = %d", adc.read());
 
-    if (!pdbDac.start(500000U)) {
+    if (!pdbDac.startUs(500000U)) {
         LOG_ERROR("PDB configuration failed");
     }
 
     LOG_DEBUG("PDB DAC trigger started");
 
-    if(dma.isComplete()) {
+    if (dma.isComplete()) {
         for (uint8_t i = 0; i < 16; i++) {
-            uint16_t value =
-                static_cast<uint16_t>(DAC0->DAT[i].DATL) |
-                (static_cast<uint16_t>(DAC0->DAT[i].DATH) << 8);
+            uint16_t value = static_cast<uint16_t>(DAC0->DAT[i].DATL) |
+                             (static_cast<uint16_t>(DAC0->DAT[i].DATH) << 8);
 
             LOG_DEBUG("DAC[%d] = %d", i, value);
         }
@@ -172,15 +160,9 @@ int main() {
     while (1) {
         // // In reality, the CPU can sleep:
         // __WFI();
-        if(delay.expired()){
-            LOG_DEBUG(
-                "CNT=%u MOD=%u DACINT=%u C2=0x%02X ADC=%u",
-                PDB0->CNT,
-                PDB0->MOD,
-                PDB0->DAC[0].INT,
-                DAC0->C2,
-                adc.read()
-            );
+        if (delay.expired()) {
+            LOG_DEBUG("CNT=%u MOD=%u DACINT=%u C2=0x%02X ADC=%u", PDB0->CNT, PDB0->MOD,
+                      PDB0->DAC[0].INT, DAC0->C2, adc.read());
         }
     }
 }

@@ -3,6 +3,7 @@
 #include <cstdint>
 
 namespace Drivers {
+
 /**
  * Base class for configuring a K22F PIT timer channel.
  */
@@ -42,14 +43,11 @@ class PitSystem : public Pit {
  */
 class PitChannel : public Pit {
   public:
-    enum class Channel : uint8_t { Channel1 = 1, Channel2 = 2, Channel3 = 3 };
+    enum class Channel : uint8_t { Channel1 = 1U, Channel2 = 2U, Channel3 = 3U };
 
     PitChannel(uint32_t busClockHz, Channel channel);
 
-    bool startTicks(uint64_t ticks);
-
-    uint64_t microsecondsToTicks(uint32_t us) const;
-    uint32_t ticksToMicroseconds(uint64_t ticks) const;
+    bool startUs(uint32_t periodUs);
 };
 
 } // namespace Drivers

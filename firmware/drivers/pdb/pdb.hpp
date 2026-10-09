@@ -3,6 +3,7 @@
 #include <cstdint>
 
 namespace Drivers {
+
 /**
  * Configures the K22F PDB for precise periodic hardware triggering.
  */
@@ -44,7 +45,7 @@ class PdbDac : public Pdb {
     PdbDac(uint32_t busClockHz, Prescaler prescaler, Multiplier multiplier);
 
     void init();
-    bool start(uint32_t periodUs);
+    bool startUs(uint32_t periodUs);
 };
 
 } // namespace Drivers

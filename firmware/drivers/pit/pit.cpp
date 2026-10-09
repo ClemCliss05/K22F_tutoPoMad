@@ -109,34 +109,18 @@ bool PitSystem::start() {
 PitChannel::PitChannel(uint32_t busClockHz, Channel channel)
     : Pit(busClockHz, static_cast<uint8_t>(channel)) {}
 
-bool PitChannel::startTicks(uint64_t ticks) {
+bool PitChannel::startUs(uint32_t periodUs) {
+    if (periodUs == 0U || busClockHz_ == 0U) {
+        return false;
+    }
+
+    // Convert the requested period to PIT ticks, rounding up.
+    const uint64_t ticks =
+        (static_cast<uint64_t>(periodUs) * busClockHz_ + 999'999ULL) / 1'000'000ULL;
+
     Interrupt::pitInterruptCount[channel_] = 0U;
 
     return configure(ticks);
-}
-
-uint64_t PitChannel::microsecondsToTicks(uint32_t us) const {
-    /*
-     * Rounded conversion:
-     *
-     * ticks = us * clock / 1,000,000
-     * Integer division would truncate fractional ticks
-     * Adding (1'000'000 - 1) rounds the result up,
-     */
-    return (static_cast<uint64_t>(us) * static_cast<uint64_t>(busClockHz_) + 999'999ULL) /
-           1'000'000ULL;
-}
-
-uint32_t PitChannel::ticksToMicroseconds(uint64_t ticks) const {
-    /*
-     * Rounded conversion:
-     *
-     * us = ticks * 1,000,000 / clock
-     * Integer division would truncate fractional microseconds.
-     * Adding (1,000,000 - 1) rounds the result up.
-     */
-    return static_cast<uint32_t>((ticks * 1'000'000ULL + 999'999ULL) /
-                                 static_cast<uint64_t>(busClockHz_));
 }
 
 } // namespace Drivers

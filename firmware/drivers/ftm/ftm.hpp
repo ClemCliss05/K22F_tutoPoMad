@@ -5,6 +5,7 @@
 #include "MK22FN512.h"
 
 namespace Drivers {
+
 /**
  * Provides common configuration for the K22F FTM timer modules.
  */
@@ -42,7 +43,7 @@ class FtmInCap : public Ftm {
         bool level;
     };
 
-    explicit FtmInCap(uint32_t busClockHz, Prescaler prescaler = Prescaler::Div16);
+    explicit FtmInCap(uint32_t busClockHz, Prescaler prescaler);
 
     void init();
 
@@ -55,11 +56,12 @@ class FtmInCap : public Ftm {
  */
 class FtmPwm : public Ftm {
   public:
-    explicit FtmPwm(uint32_t busClockHz, Prescaler prescaler = Prescaler::Div16);
+    explicit FtmPwm(uint32_t busClockHz, Prescaler prescaler);
 
     // Pin PTD2 -> FTM3_CH2.
     void init();
 
+    bool startUs(uint32_t periodUs);
     void setDutyCycle(uint8_t dutyPercent);
 };
 

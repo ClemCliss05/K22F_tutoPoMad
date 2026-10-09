@@ -93,20 +93,18 @@ void PdbDac::init() {
     PDB0->DAC[0].INTC = PDB_INTC_TOE_MASK;
 }
 
-bool PdbDac::start(uint32_t periodUs) {
+bool PdbDac::startUs(uint32_t periodUs) {
     const uint32_t pdbClockHz = getClockHz();
 
-    /*
-     * Rounded conversion:
-     *
-     * ticks = periodUs * clock / 1,000,000
-     *
-     * Adding 1,000,000 - 1 rounds the result up.
-     */
-    const uint64_t ticks =
-        (static_cast<uint64_t>(periodUs) * static_cast<uint64_t>(pdbClockHz) + 999'999ULL) /
-        1'000'000ULL;
+    if (periodUs == 0U || pdbClockHz == 0U) {
+        return false;
+    }
 
+    // Convert the requested period to PDB ticks, rounding up.
+    const uint64_t ticks =
+        (static_cast<uint64_t>(periodUs) * pdbClockHz + 999'999ULL) / 1'000'000ULL;
+
+    // MOD is 16-bit and represents ticks - 1.
     constexpr uint64_t maxTicks = static_cast<uint64_t>(UINT16_MAX) + 1ULL;
 
     if (ticks == 0U || ticks > maxTicks) {
@@ -120,5 +118,4 @@ bool PdbDac::start(uint32_t periodUs) {
 
     return configure(ticks);
 }
-
 } // namespace Drivers

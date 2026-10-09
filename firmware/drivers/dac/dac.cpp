@@ -36,39 +36,29 @@ void Dac::initFifo() {
     DAC0->C2 = 0U;
 
     // Enable DAC and select VDDA as reference.
-    DAC0->C0 =
-        DAC_C0_DACEN_MASK |
-        DAC_C0_DACRFS_MASK;
+    DAC0->C0 = DAC_C0_DACEN_MASK | DAC_C0_DACRFS_MASK;
 
     // Enable DAC buffer in FIFO mode.
-    DAC0->C1 =
-        DAC_C1_DACBFEN_MASK |
-        DAC_C1_DACBFMD(3U);
+    DAC0->C1 = DAC_C1_DACBFEN_MASK | DAC_C1_DACBFMD(3U);
 }
 
-void Dac::writeFifo(uint16_t value)
-{
+void Dac::writeFifo(uint16_t value) {
     value &= MaxValue;
 
     DAC0->DAT[0].DATL = static_cast<uint8_t>(value);
     DAC0->DAT[0].DATH = static_cast<uint8_t>(value >> 8);
 }
 
-volatile uint16_t* Dac::fifoAddress()
-{
-    return reinterpret_cast<volatile uint16_t*>(
-        &DAC0->DAT[0].DATL
-    );
+volatile uint16_t *Dac::fifoAddress() {
+    return reinterpret_cast<volatile uint16_t *>(&DAC0->DAT[0].DATL);
 }
 
-void Dac::enableSoftwareTrigger()
-{
+void Dac::enableSoftwareTrigger() {
     // Select software trigger mode.
     DAC0->C0 |= DAC_C0_DACTRGSEL_MASK;
 }
 
-void Dac::softwareTrigger()
-{
+void Dac::softwareTrigger() {
     DAC0->C0 |= DAC_C0_DACSWTRG_MASK;
 }
 

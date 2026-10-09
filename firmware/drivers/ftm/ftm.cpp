@@ -101,35 +101,53 @@ void FtmPwm::init() {
     PORTD->PCR[2] &= ~PORT_PCR_MUX_MASK;
     PORTD->PCR[2] |= PORT_PCR_MUX(0x04);
 
-    // Reset FTM3_CH2 configuration.
+    // Stop FTM3 before configuration.
     FTM3->SC = 0U;
+
+    // Reset FTM3_CH2 configuration.
     FTM3->CONTROLS[2].CnSC = 0U;
     FTM3->CONTROLS[2].CnV = 0U;
 
     FTM3->CNTIN = 0U;
     FTM3->CNT = 0U;
+    FTM3->MOD = 0U;
     FTM3->MODE = 0U;
 
-    /*
-     * PWM frequency depends on:
-     *
-     *     FTM clock / (MOD + 1)
-     *
-     * The current configuration keeps the previous
-     * 1 kHz PWM when using a 48 MHz bus clock
-     * and a /16 prescaler.
-     */
-    const uint32_t ftmClockHz = getClockHz();
-
-    FTM3->MOD = static_cast<uint16_t>((ftmClockHz / 1000U) - 1U);
-
-    // Edge-Aligned PWM, high-true pulses.
+    // Edge-aligned PWM, high-true pulses.
     FTM3->CONTROLS[2].CnSC = FTM_CnSC_MSB_MASK | FTM_CnSC_ELSB_MASK;
 
-    FTM3->CONTROLS[2].CnSC &= ~FTM_CnSC_ELSA_MASK;
+    // Keep the counter stopped until startUs().
+    FTM3->SC = FTM_SC_PS(static_cast<uint32_t>(prescaler_));
+}
 
-    // Select FTM clock and configured prescaler.
+bool FtmPwm::startUs(uint32_t periodUs) {
+    const uint32_t ftmClockHz = getClockHz();
+
+    if (periodUs == 0U || ftmClockHz == 0U) {
+        return false;
+    }
+
+    // Convert the requested period to timer ticks, rounding up.
+    const uint64_t ticks =
+        (static_cast<uint64_t>(periodUs) * ftmClockHz + 999'999ULL) / 1'000'000ULL;
+
+    // MOD is 16-bit and represents ticks - 1.
+    constexpr uint64_t maxTicks = static_cast<uint64_t>(UINT16_MAX) + 1ULL;
+
+    if (ticks == 0U || ticks > maxTicks) {
+        return false;
+    }
+
+    // Stop the counter before changing the period.
+    FTM3->SC = FTM_SC_PS(static_cast<uint32_t>(prescaler_));
+
+    FTM3->MOD = static_cast<uint16_t>(ticks - 1U);
+    FTM3->CNT = 0U;
+
+    // Start the counter using the configured prescaler.
     FTM3->SC = FTM_SC_CLKS(0x01U) | FTM_SC_PS(static_cast<uint32_t>(prescaler_));
+
+    return true;
 }
 
 void FtmPwm::setDutyCycle(uint8_t dutyPercent) {
@@ -139,7 +157,14 @@ void FtmPwm::setDutyCycle(uint8_t dutyPercent) {
 
     const uint32_t periodTicks = static_cast<uint32_t>(ftm_->MOD) + 1U;
 
-    ftm_->CONTROLS[2].CnV = static_cast<uint16_t>((periodTicks * dutyPercent) / 100U);
+    uint32_t compare = (periodTicks * dutyPercent) / 100U;
+
+    // CnV is 16-bit; cap the compare value at MOD.
+    if (compare > ftm_->MOD) {
+        compare = ftm_->MOD;
+    }
+
+    ftm_->CONTROLS[2].CnV = static_cast<uint16_t>(compare);
 }
 
 } // namespace Drivers
