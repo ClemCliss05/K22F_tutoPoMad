@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+namespace Core {
 /**
  * Provides a fixed-size FIFO buffer for non-blocking data handling.
  */
@@ -21,3 +22,4 @@ class RingBuffer {
     size_t head_;
     size_t tail_;
 };
+} // namespace Core

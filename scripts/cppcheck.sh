@@ -21,6 +21,7 @@ cppcheck \
     --std=c++17 \
     --force \
     --error-exitcode=1 \
+    --check-level=exhaustive \
     --suppressions-list=scripts/config/cppcheckSuppress.txt \
     $FILES \
     2> build/build_cppcheck.txt

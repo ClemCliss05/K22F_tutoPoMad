@@ -1,5 +1,6 @@
 #include "ringbuffer.hpp"
 
+namespace Core {
 RingBuffer::RingBuffer(char *buffer, size_t size)
     : buffer_(buffer), size_(size), head_(0), tail_(0) {}
 
@@ -36,3 +37,4 @@ bool RingBuffer::write(const char *data, size_t len) {
 
     return true;
 }
+} // namespace Core

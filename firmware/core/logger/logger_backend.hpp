@@ -1,5 +1,6 @@
 #pragma once
 
+namespace Core {
 /**
  * Interface for logger output backends.
  */
@@ -9,3 +10,4 @@ class ILoggerBackend {
 
     virtual void write(char c) = 0;
 };
+} // namespace Core

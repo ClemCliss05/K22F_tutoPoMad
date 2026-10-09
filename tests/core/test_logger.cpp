@@ -6,7 +6,7 @@
 
 #include <string>
 
-class FakeBackend : public ILoggerBackend {
+class FakeBackend : public Core::ILoggerBackend {
   public:
     std::string out;
 
@@ -18,13 +18,13 @@ class FakeBackend : public ILoggerBackend {
 TEST(LoggerTest, LogMessage) {
     char mem[64];
 
-    RingBuffer rb(mem, sizeof(mem));
+    Core::RingBuffer rb(mem, sizeof(mem));
 
     FakeBackend backend;
 
-    Logger logger(rb, backend);
+    Core::Logger logger(rb, backend);
 
-    logger.log(LogLevel::Debug, "hello");
+    logger.log(Core::LogLevel::Debug, "hello");
 
     EXPECT_EQ(backend.out, "[DEBUG] hello\r\n");
 }
@@ -32,13 +32,13 @@ TEST(LoggerTest, LogMessage) {
 TEST(LoggerTest, FormatInteger) {
     char mem[64];
 
-    RingBuffer rb(mem, sizeof(mem));
+    Core::RingBuffer rb(mem, sizeof(mem));
 
     FakeBackend backend;
 
-    Logger logger(rb, backend);
+    Core::Logger logger(rb, backend);
 
-    logger.log(LogLevel::Debug, "Counter=%d", 42);
+    logger.log(Core::LogLevel::Debug, "Counter=%d", 42);
 
     EXPECT_EQ(backend.out, "[DEBUG] Counter=42\r\n");
 }
@@ -46,14 +46,14 @@ TEST(LoggerTest, FormatInteger) {
 TEST(LoggerTest, MultipleMessages) {
     char mem[64];
 
-    RingBuffer rb(mem, sizeof(mem));
+    Core::RingBuffer rb(mem, sizeof(mem));
 
     FakeBackend backend;
 
-    Logger logger(rb, backend);
+    Core::Logger logger(rb, backend);
 
-    logger.log(LogLevel::Debug, "Hello");
-    logger.log(LogLevel::Debug, "World");
+    logger.log(Core::LogLevel::Debug, "Hello");
+    logger.log(Core::LogLevel::Debug, "World");
 
     EXPECT_EQ(backend.out, "[DEBUG] Hello\r\n"
                            "[DEBUG] World\r\n");

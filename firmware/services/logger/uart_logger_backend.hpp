@@ -7,7 +7,7 @@ namespace Services {
 /**
  * Sends logger messages through a UART interface.
  */
-class UartLoggerBackend : public ILoggerBackend {
+class UartLoggerBackend : public Core::ILoggerBackend {
   public:
     /**
      * Use an existing UART driver as the logger output.
