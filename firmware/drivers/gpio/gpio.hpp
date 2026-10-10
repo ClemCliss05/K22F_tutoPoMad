@@ -26,8 +26,8 @@ class Gpio {
 
     /*
      * Push Button driver functions
-     * PTB17 -> PB1
-     * PTC1  -> PB2
+     * Pin PTB17 -> PB1
+     * Pin PTC1  -> PB2
      */
     void PBs_Init(void);
     bool PB1_GetState(void);

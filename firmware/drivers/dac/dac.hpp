@@ -3,26 +3,37 @@
 #include <cstdint>
 
 namespace Drivers {
+
 /**
- * Configures and controls the K22F DAC output.
+ * Controls the K22F DAC0 peripheral.
  */
 class Dac {
   public:
-    /*
-     * Pin DAC0_OUT -> DAC0_OUT
-     */
+    // Initialize the DAC without the data buffer.
+    // Pin DAC0_OUT -> DAC0_OUT
     void init();
-    void write(uint16_t value);
 
+    // Initialize the DAC with the buffer in normal mode.
+    void initNormalBuffer();
+
+    // Initialize the DAC with the buffer in FIFO mode.
     void initFifo();
-    void writeFifo(uint16_t value);
-    volatile uint16_t *fifoAddress();
 
+    // Write 12-bit value to DAT[0] | DAT[index] | DAT[0] Fifo mode.
+    bool write(uint16_t value, uint8_t index = 0U);
+
+    // Return the FIFO data register address for DMA configuration.
+    volatile uint16_t *buffAddress();
+
+    // Select software triggering instead of hardware triggering.
     void enableSoftwareTrigger();
+
+    // Request a software-triggered DAC conversion.
     void softwareTrigger();
 
   private:
-    // 12-bit DAC
+    // Maximum value supported by the 12-bit DAC.
     static constexpr uint16_t MaxValue = 4095U;
 };
+
 } // namespace Drivers

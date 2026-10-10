@@ -45,6 +45,7 @@ class FtmInCap : public Ftm {
 
     explicit FtmInCap(uint32_t busClockHz, Prescaler prescaler);
 
+    // Pin PTB18 -> FTM2_CH0
     void init();
 
     bool captureAvailable() const;

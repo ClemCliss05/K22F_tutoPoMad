@@ -32,14 +32,9 @@ class Dma {
 
     explicit Dma(Channel channel);
 
-    // Configure a memory-to-memory transfer with the variable type T.
+    // Config transfer from src to dest with a variable type T .
     template <typename T>
-    void configureMemoryToMemory(const T *source, T *destination, uint16_t elementCount);
-
-    // Configure a memory-to-peripheral transfer with the variable type T.
-    template <typename T>
-    void configureMemoryToPeripheral(const T *source, volatile T *destination,
-                                     uint16_t elementCount);
+    void configTransfer(const T *src, volatile T *dest, int16_t destStep, uint16_t elementCount);
 
     // Trigger one DMA service request.
     void start();

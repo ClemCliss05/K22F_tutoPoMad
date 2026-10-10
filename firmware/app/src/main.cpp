@@ -102,7 +102,8 @@ int main() {
     // =========================================================================
 
     Drivers::Dac dac;
-    dac.initFifo();
+    // dac.initFifo();
+    dac.initNormalBuffer();
 
     LOG_INFO("DAC OK");
 
@@ -117,10 +118,31 @@ int main() {
 
     LOG_INFO("PDB OK");
 
-    uint16_t waveform[16] = {1000, 1500, 2000, 2500, 3000, 3500, 4000, 3500,
-                             3000, 2500, 2000, 1500, 1000, 500,  200,  500};
+    // =========================================================================
+    // Sinus LUT
+    // =========================================================================
 
-    dma.configureMemoryToPeripheral(waveform, dac.fifoAddress(), 16);
+    constexpr uint16_t LutSize = 16U;
+    constexpr float Pi = 3.14159265358979323846f;
+    constexpr float Offset = 2047.5f;
+    constexpr float Amplitude = 1800.0f;
+
+    uint16_t waveform[LutSize];
+
+    for (uint16_t i = 0; i < LutSize; ++i) {
+        const float phase = (2.0f * Pi * static_cast<float>(i)) / static_cast<float>(LutSize);
+
+        const float sample = Offset + Amplitude * sinf(phase);
+
+        waveform[i] = static_cast<uint16_t>(sample + 0.5f);
+    }
+
+    // =========================================================================
+    // Sinus Generation
+    // =========================================================================
+
+    // dma.configTransfer(waveform, dac.buffAddress(), 0, 16);
+    dma.configTransfer(waveform, dac.buffAddress(), 2, 16);
 
     for (uint8_t i = 0; i < 16; i++) {
         dma.start();
