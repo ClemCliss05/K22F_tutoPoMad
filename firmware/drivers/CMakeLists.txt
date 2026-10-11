@@ -10,6 +10,7 @@ target_sources(drivers PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/adc/adc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dac/dac.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dma/dma.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dma/dmamux.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ftm/ftm.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gpio/gpio.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/pdb/pdb.cpp

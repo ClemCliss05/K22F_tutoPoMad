@@ -7,6 +7,7 @@
 #include "adc.hpp"
 #include "dac.hpp"
 #include "dma.hpp"
+#include "dmamux.hpp"
 #include "gpio.hpp"
 #include "pdb.hpp"
 #include "pit.hpp"
@@ -94,8 +95,18 @@ int main() {
     // =========================================================================
 
     Drivers::Dma dma(Drivers::Dma::Channel::Channel0);
+    dma.init();
 
     LOG_INFO("DMA OK");
+
+    // =========================================================================
+    // DMAMUX
+    // =========================================================================
+
+    Drivers::DmaMux dmaMux;
+    dmaMux.init();
+
+    LOG_INFO("DMAMUX OK");
 
     // =========================================================================
     // DAC
@@ -122,12 +133,12 @@ int main() {
     // Sinus LUT
     // =========================================================================
 
-    constexpr uint16_t LutSize = 16U;
+    constexpr uint16_t LutSize = 64U;
     constexpr float Pi = 3.14159265358979323846f;
     constexpr float Offset = 2047.5f;
     constexpr float Amplitude = 1800.0f;
 
-    uint16_t waveform[LutSize];
+    alignas(2 * LutSize) uint16_t waveform[LutSize];
 
     for (uint16_t i = 0; i < LutSize; ++i) {
         const float phase = (2.0f * Pi * static_cast<float>(i)) / static_cast<float>(LutSize);
@@ -135,37 +146,34 @@ int main() {
         const float sample = Offset + Amplitude * sinf(phase);
 
         waveform[i] = static_cast<uint16_t>(sample + 0.5f);
+        LOG_DEBUG("waveform[%d] = %d", i, waveform[i]);
     }
+
+    LOG_INFO("Sinus LUT OK");
 
     // =========================================================================
     // Sinus Generation
     // =========================================================================
 
-    // dma.configTransfer(waveform, dac.buffAddress(), 0, 16);
-    dma.configTransfer(waveform, dac.buffAddress(), 2, 16);
-
-    for (uint8_t i = 0; i < 16; i++) {
-        dma.start();
-
-        LOG_DEBUG("Transfer %d: CITER=%d", i + 1, dma.getCurrentIteration());
+    if (!dma.configCircularTransfer(waveform, LutSize, dac.buffAddress(), 2U,
+                                    Drivers::Dac::BufferSize, Drivers::Dac::BufferSize, 1U)) {
+        LOG_ERROR("dma.configCircularTransfer");
     }
 
-    LOG_DEBUG("DACoutput before trigger from PDB = %d", adc.read());
+    if (!dmaMux.configure(Drivers::Dma::Channel::Channel0, Drivers::DmaMux::Source::Dac0)) {
+        LOG_ERROR("dmaMux.configure");
+    }
 
-    if (!pdbDac.startUs(500000U)) {
+    // Arm the DMA path before starting the PDB.
+    dma.enableHardwareRequests();
+    dac.configureBufferEvent(Drivers::Dac::BufferEvent::PointerTop);
+    dac.enableDmaRequests();
+
+    if (!pdbDac.startUs(10000U)) {
         LOG_ERROR("PDB configuration failed");
     }
 
     LOG_DEBUG("PDB DAC trigger started");
-
-    if (dma.isComplete()) {
-        for (uint8_t i = 0; i < 16; i++) {
-            uint16_t value = static_cast<uint16_t>(DAC0->DAT[i].DATL) |
-                             (static_cast<uint16_t>(DAC0->DAT[i].DATH) << 8);
-
-            LOG_DEBUG("DAC[%d] = %d", i, value);
-        }
-    }
 
     // =========================================================================
     // Main loop
@@ -177,14 +185,15 @@ int main() {
     //     __NOP();
     // }
     // gpio.LED_Off(LedColor::Blue);
-    delay.startPeriodicMs(100);
+    delay.startPeriodicMs(2);
 
     while (1) {
         // // In reality, the CPU can sleep:
         // __WFI();
         if (delay.expired()) {
-            LOG_DEBUG("CNT=%u MOD=%u DACINT=%u C2=0x%02X ADC=%u", PDB0->CNT, PDB0->MOD,
-                      PDB0->DAC[0].INT, DAC0->C2, adc.read());
+            LOG_DEBUG("CNT=%u DACINT=%u C2=0x%02X SR=0x%X CITER=0x%X ES=0x%X ADC=%u", PDB0->CNT,
+                      PDB0->DAC[0].INT, DAC0->C2, DAC0->SR, DMA0->TCD[0].CITER_ELINKNO, DMA0->ES,
+                      adc.read());
         }
     }
 }

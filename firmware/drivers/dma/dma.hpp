@@ -12,46 +12,54 @@ namespace Drivers {
 class Dma {
   public:
     enum class Channel : uint8_t {
-        Channel0 = 0,
-        Channel1 = 1,
-        Channel2 = 2,
-        Channel3 = 3,
-        Channel4 = 4,
-        Channel5 = 5,
-        Channel6 = 6,
-        Channel7 = 7,
-        Channel8 = 8,
-        Channel9 = 9,
-        Channel10 = 10,
-        Channel11 = 11,
-        Channel12 = 12,
-        Channel13 = 13,
-        Channel14 = 14,
-        Channel15 = 15,
+        Channel0 = 0U,
+        Channel1 = 1U,
+        Channel2 = 2U,
+        Channel3 = 3U,
+        Channel4 = 4U,
+        Channel5 = 5U,
+        Channel6 = 6U,
+        Channel7 = 7U,
+        Channel8 = 8U,
+        Channel9 = 9U,
+        Channel10 = 10U,
+        Channel11 = 11U,
+        Channel12 = 12U,
+        Channel13 = 13U,
+        Channel14 = 14U,
+        Channel15 = 15U
     };
 
     explicit Dma(Channel channel);
 
-    // Config transfer from src to dest with a variable type T .
-    template <typename T>
-    void configTransfer(const T *src, volatile T *dest, int16_t destStep, uint16_t elementCount);
+    void init();
 
-    // Trigger one DMA service request.
+    // Configure a linear transfer.
+    template <typename T>
+    bool configLinearTransfer(const T *src, volatile T *dest, int16_t destStep,
+                              uint16_t samplesPerMinorLoop, uint16_t minorLoopCount);
+
+    // Configure a circular source and destination transfer.
+    template <typename T>
+    bool configCircularTransfer(const T *sourceBase, uint16_t sourceCount, volatile T *dest,
+                                int16_t destStep, uint16_t destModuloCount,
+                                uint16_t samplesPerMinorLoop, uint16_t minorLoopCount);
+
+    // Trigger one software DMA service request.
     void start();
 
-    // Check if the current transfer is complete.
+    // Enable or disable hardware DMA requests.
+    void enableHardwareRequests();
+    void disableHardwareRequests();
+
+    // Return transfer status.
     bool isComplete() const;
-
-    // Check if a DMA error occurred.
     bool hasError() const;
-
-    // Return the number of remaining minor loops.
     uint16_t getCurrentIteration() const;
 
   private:
     uint8_t channel_;
 
-    // Return the DMA transfer-size encoding for the given C++ type.
     template <typename T> static constexpr uint8_t dmaTransferSize();
 };
 
