@@ -30,7 +30,6 @@ int main() {
     // =========================================================================
 
     Bsp::Clock clock;
-
     clock.initOSC();
     clock.set48MHz();
 
@@ -113,8 +112,8 @@ int main() {
     // =========================================================================
 
     Drivers::Dac dac;
-    // dac.initFifo();
-    dac.initNormalBuffer();
+    dac.initFifo();
+    // dac.initNormalBuffer();
 
     LOG_INFO("DAC OK");
 
@@ -155,8 +154,7 @@ int main() {
     // Sinus Generation
     // =========================================================================
 
-    if (!dma.configCircularTransfer(waveform, LutSize, dac.buffAddress(), 2U,
-                                    Drivers::Dac::BufferSize, Drivers::Dac::BufferSize, 1U)) {
+    if (!dma.configCircularTransfer(waveform, dac.buffAddress(), 0U, LutSize, 0U, 1U, 64U)) {
         LOG_ERROR("dma.configCircularTransfer");
     }
 
@@ -166,7 +164,7 @@ int main() {
 
     // Arm the DMA path before starting the PDB.
     dma.enableHardwareRequests();
-    dac.configureBufferEvent(Drivers::Dac::BufferEvent::PointerTop);
+    dac.configureBufferEvent(Drivers::Dac::BufferEvent::Watermark);
     dac.enableDmaRequests();
 
     if (!pdbDac.startUs(10000U)) {

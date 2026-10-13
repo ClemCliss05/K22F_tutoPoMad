@@ -34,6 +34,13 @@ class Dma {
 
     void init();
 
+    // Configure a DMA transfer with independent source and destination
+    // address stepping and modulo behavior.
+    template <typename T>
+    bool configTransfer(const T *src, volatile T *dest, int16_t sourceStep, int16_t destStep,
+                        uint16_t sourceModuloCount, uint16_t destModuloCount,
+                        uint16_t samplesPerMinorLoop, uint16_t minorLoopCount);
+
     // Configure a linear transfer.
     template <typename T>
     bool configLinearTransfer(const T *src, volatile T *dest, int16_t destStep,
@@ -41,8 +48,8 @@ class Dma {
 
     // Configure a circular source and destination transfer.
     template <typename T>
-    bool configCircularTransfer(const T *sourceBase, uint16_t sourceCount, volatile T *dest,
-                                int16_t destStep, uint16_t destModuloCount,
+    bool configCircularTransfer(const T *src, volatile T *dest, int16_t destStep,
+                                uint16_t sourceModuloCount, uint16_t destModuloCount,
                                 uint16_t samplesPerMinorLoop, uint16_t minorLoopCount);
 
     // Trigger one software DMA service request.

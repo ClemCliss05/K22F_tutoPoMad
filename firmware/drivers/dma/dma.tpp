@@ -1,76 +1,21 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+
 namespace Drivers {
 
-
+/**
+ * Configure a DMA transfer with independent source and destination
+ * address stepping and modulo behavior.
+ */
 template<typename T>
-bool Dma::configLinearTransfer(
+bool Dma::configTransfer(
     const T* src,
     volatile T* dest,
+    int16_t sourceStep,
     int16_t destStep,
-    uint16_t samplesPerMinorLoop,
-    uint16_t minorLoopCount) {
-
-    static_assert(
-        sizeof(T) == 1U || sizeof(T) == 2U || sizeof(T) == 4U,
-        "Unsupported DMA transfer size");
-
-    if (src == nullptr || dest == nullptr ||
-        samplesPerMinorLoop == 0U ||
-        minorLoopCount == 0U ||
-        minorLoopCount > 0x7FFFU) {
-        return false;
-    }
-
-    // Disable requests before updating the TCD.
-    disableHardwareRequests();
-
-    DMA0->TCD[channel_].SADDR =
-        static_cast<uint32_t>(
-            reinterpret_cast<uintptr_t>(src));
-
-    DMA0->TCD[channel_].DADDR =
-        static_cast<uint32_t>(
-            reinterpret_cast<uintptr_t>(dest));
-
-    // Advance the source by one element per transfer.
-    DMA0->TCD[channel_].SOFF =
-        static_cast<int16_t>(sizeof(T));
-
-    // Apply the destination stride after each transfer.
-    DMA0->TCD[channel_].DOFF = destStep;
-
-    // Source and destination transfer sizes match T.
-    const uint8_t transferSize = dmaTransferSize<T>();
-
-    DMA0->TCD[channel_].ATTR =
-        DMA_ATTR_SSIZE(transferSize) |
-        DMA_ATTR_DSIZE(transferSize);
-
-    // Transfer samplesPerMinorLoop elements per minor loop.
-    DMA0->TCD[channel_].NBYTES_MLNO =
-        static_cast<uint32_t>(samplesPerMinorLoop) * sizeof(T);
-
-    // Do not adjust addresses at major-loop completion.
-    DMA0->TCD[channel_].SLAST = 0U;
-    DMA0->TCD[channel_].DLAST_SGA = 0U;
-
-    // Number of minor loops in one major loop.
-    DMA0->TCD[channel_].BITER_ELINKNO = minorLoopCount;
-    DMA0->TCD[channel_].CITER_ELINKNO = minorLoopCount;
-
-    // No interrupt or scatter/gather chaining.
-    DMA0->TCD[channel_].CSR = 0U;
-
-    return true;
-}
-
-template<typename T>
-bool Dma::configCircularTransfer(
-    const T* sourceBase,
-    uint16_t sourceCount,
-    volatile T* dest,
-    int16_t destStep,
+    uint16_t sourceModuloCount,
     uint16_t destModuloCount,
     uint16_t samplesPerMinorLoop,
     uint16_t minorLoopCount) {
@@ -79,27 +24,56 @@ bool Dma::configCircularTransfer(
         sizeof(T) == 1U || sizeof(T) == 2U || sizeof(T) == 4U,
         "Unsupported DMA transfer size");
 
-    // Validate the transfer parameters.
-    if (sourceBase == nullptr || dest == nullptr ||
-        sourceCount == 0U ||
-        destModuloCount == 0U ||
+    // Validate pointers and loop counters before configuring the TCD.
+    if (src == nullptr ||
+        dest == nullptr ||
         samplesPerMinorLoop == 0U ||
         minorLoopCount == 0U ||
-        minorLoopCount > 0x7FFFU ||
-        destStep < static_cast<int16_t>(sizeof(T)) ||
-        (destStep % static_cast<int16_t>(sizeof(T))) != 0) {
+        minorLoopCount > 0x7FFFU) {
         return false;
     }
 
-    const std::size_t sourceBytes =
-        static_cast<std::size_t>(sourceCount) * sizeof(T);
+    // DMA addresses must remain aligned to the transferred type.
+    // int32_t makes the signed stride checks explicit.
+    const int32_t srcStep = sourceStep;
+    const int32_t dstStep = destStep;
+    const int32_t elementSize = static_cast<int32_t>(sizeof(T));
 
-    // The destination modulo region includes the address stride.
-    const std::size_t destModuloBytes =
-        static_cast<std::size_t>(destModuloCount) *
-        static_cast<std::size_t>(destStep);
+    if ((srcStep % elementSize) != 0 ||
+        (dstStep % elementSize) != 0) {
+        return false;
+    }
 
-    // Encode a power-of-two modulo region, at least 2 bytes.
+    // Hardware modulo requires a moving address.
+    if ((sourceModuloCount != 0U && sourceStep == 0) ||
+        (destModuloCount != 0U && destStep == 0)) {
+        return false;
+    }
+
+    // Use absolute strides to calculate the address span of each region.
+    // int32_t avoids negating an int16_t directly, which could overflow.
+    const std::size_t srcStride =
+        static_cast<std::size_t>(srcStep < 0 ? -srcStep : srcStep);
+
+    const std::size_t dstStride =
+        static_cast<std::size_t>(dstStep < 0 ? -dstStep : dstStep);
+
+    std::size_t sourceModuloBytes = 0U;
+    std::size_t destModuloBytes = 0U;
+
+    // A zero count disables modulo; otherwise calculate the region size.
+    if (sourceModuloCount != 0U) {
+        sourceModuloBytes =
+            static_cast<std::size_t>(sourceModuloCount) * srcStride;
+    }
+
+    if (destModuloCount != 0U) {
+        destModuloBytes =
+            static_cast<std::size_t>(destModuloCount) * dstStride;
+    }
+
+    // Convert a power-of-two region size to the eDMA SMOD/DMOD encoding.
+    // The hardware uses this encoding instead of a byte count.
     const auto getModuloEncoding =
         [](std::size_t bytes, uint8_t& encoding) -> bool {
             if (bytes < 2U ||
@@ -120,42 +94,47 @@ bool Dma::configCircularTransfer(
     uint8_t sourceModulo = 0U;
     uint8_t destModulo = 0U;
 
-    if (!getModuloEncoding(sourceBytes, sourceModulo) ||
+    // Validate and encode only the modulo regions that are enabled.
+    if (sourceModuloCount != 0U &&
+        !getModuloEncoding(sourceModuloBytes, sourceModulo)) {
+        return false;
+    }
+
+    if (destModuloCount != 0U &&
         !getModuloEncoding(destModuloBytes, destModulo)) {
         return false;
     }
 
+    // Convert pointers to integers to check hardware modulo alignment.
     const std::uintptr_t sourceAddress =
-        reinterpret_cast<std::uintptr_t>(sourceBase);
+        reinterpret_cast<std::uintptr_t>(src);
 
     const std::uintptr_t destAddress =
         reinterpret_cast<std::uintptr_t>(dest);
 
-    // Modulo regions must be aligned to their size.
-    // use alignas(2^(x)) to ensure this
-    if ((sourceAddress & (sourceBytes - 1U)) != 0U ||
-        (destAddress & (destModuloBytes - 1U)) != 0U) {
+    // The hardware modulo requires base alignment to the region size.
+    // Use alignas(2^(x)) to ensure this.
+    if ((sourceModuloCount != 0U &&
+         (sourceAddress & (sourceModuloBytes - 1U)) != 0U) ||
+        (destModuloCount != 0U &&
+         (destAddress & (destModuloBytes - 1U)) != 0U)) {
         return false;
     }
 
-    // Disable requests before updating the TCD.
+    // Disable DMA requests before changing the channel TCD.
     disableHardwareRequests();
 
     DMA0->TCD[channel_].SADDR =
-        static_cast<uint32_t>(
-            reinterpret_cast<std::uintptr_t>(
-                sourceBase));
+        static_cast<uint32_t>(sourceAddress);
 
     DMA0->TCD[channel_].DADDR =
         static_cast<uint32_t>(destAddress);
 
-    // Advance the source by one element per transfer.
-    DMA0->TCD[channel_].SOFF =
-        static_cast<int16_t>(sizeof(T));
-
-    // Apply the destination stride after each transfer.
+    // Configure address stepping. A zero step keeps the address fixed.
+    DMA0->TCD[channel_].SOFF = sourceStep;
     DMA0->TCD[channel_].DOFF = destStep;
 
+    // Source and destination transfer sizes both match T.
     const uint8_t transferSize = dmaTransferSize<T>();
 
     DMA0->TCD[channel_].ATTR =
@@ -164,22 +143,74 @@ bool Dma::configCircularTransfer(
         DMA_ATTR_SMOD(sourceModulo) |
         DMA_ATTR_DMOD(destModulo);
 
-    // Transfer samplesPerMinorLoop elements per minor loop.
+    // NBYTES is the number of bytes transferred per minor loop.
     DMA0->TCD[channel_].NBYTES_MLNO =
         static_cast<uint32_t>(samplesPerMinorLoop) * sizeof(T);
 
-    // Hardware modulo handles address wraparound.
+    // Modulo handles circular address wrapping; no end-of-loop offset needed.
     DMA0->TCD[channel_].SLAST = 0U;
     DMA0->TCD[channel_].DLAST_SGA = 0U;
 
-    // Number of minor loops in one major loop.
+    // Configure the number of minor loops in each major loop.
     DMA0->TCD[channel_].BITER_ELINKNO = minorLoopCount;
     DMA0->TCD[channel_].CITER_ELINKNO = minorLoopCount;
 
-    // No interrupt or scatter/gather chaining.
+    // No major-loop interrupt or scatter/gather chaining.
     DMA0->TCD[channel_].CSR = 0U;
 
     return true;
+}
+
+
+/**
+ * Configure a linear transfer.
+ */
+template<typename T>
+bool Dma::configLinearTransfer(
+    const T* src,
+    volatile T* dest,
+    int16_t destStep,
+    uint16_t samplesPerMinorLoop,
+    uint16_t minorLoopCount) {
+
+    return configTransfer<T>(
+        src,
+        dest,
+        static_cast<int16_t>(sizeof(T)), // Increment source
+        destStep,                        // Destination stride
+        0U,                              // No source modulo
+        0U,                              // No destination modulo
+        samplesPerMinorLoop,
+        minorLoopCount);
+}
+
+
+/**
+ * Configure a transfer with a circular source.
+ */
+template<typename T>
+bool Dma::configCircularTransfer(
+    const T* src,
+    volatile T* dest,
+    int16_t destStep,
+    uint16_t sourceModuloCount,
+    uint16_t destModuloCount,
+    uint16_t samplesPerMinorLoop,
+    uint16_t minorLoopCount) {
+
+    if (sourceModuloCount == 0U) {
+        return false;
+    }
+
+    return configTransfer<T>(
+        src,
+        dest,
+        static_cast<int16_t>(sizeof(T)), // Increment source
+        destStep,
+        sourceModuloCount,               // Circular source region
+        destModuloCount,                 // Optional destination modulo
+        samplesPerMinorLoop,
+        minorLoopCount);
 }
 
 template<typename T>

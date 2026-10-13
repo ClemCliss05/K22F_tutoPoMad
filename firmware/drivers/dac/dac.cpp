@@ -55,9 +55,6 @@ bool Dac::initFifo(uint8_t watermark) {
     // DMA requests remain disabled until explicitly enabled.
     DAC0->C1 = DAC_C1_DACBFEN_MASK | DAC_C1_DACBFMD(3U) | DAC_C1_DACBFWM(watermark);
 
-    // Configure the FIFO buffer upper limit.
-    DAC0->C2 = DAC_C2_DACBFUP(15U);
-
     // Remember that writes must feed the FIFO through DAT[0].
     fifoMode_ = true;
 
