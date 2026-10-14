@@ -31,6 +31,7 @@ endif()
 
 option(ANALYSIS "Build hardware independent firmware parts for analysis" OFF)
 option(TESTS "Enable ASAN/UBSAN and tests" OFF)
+option(ENABLE_FPU "Enable hardware floating-point support (Cortex-M4F)" OFF)
 
 # ------------------------------------------------------------------------------
 # Platform CPU Flags definition test
@@ -70,6 +71,20 @@ else()
     # --------------------------------------------------------------------------
     # Embedded target
     # --------------------------------------------------------------------------
+
+    if(ENABLE_FPU)
+        message(STATUS "Hardware FPU support enabled")
+
+        add_compile_options(
+            -mfpu=fpv4-sp-d16
+            -mfloat-abi=hard
+        )
+
+        add_link_options(
+            -mfpu=fpv4-sp-d16
+            -mfloat-abi=hard
+        )
+    endif()
 
     add_subdirectory(firmware)
 

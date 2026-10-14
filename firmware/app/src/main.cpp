@@ -2,6 +2,7 @@
 
 // BSP platform
 #include "clock.hpp"
+#include "dwt.hpp"
 
 // Drivers
 #include "adc.hpp"
@@ -16,6 +17,7 @@
 // Core
 #include "logger.hpp"
 #include "ringbuffer.hpp"
+#include "time.hpp"
 
 // Services
 #include "delay.hpp"
@@ -23,6 +25,27 @@
 
 // C lib
 #include <math.h>
+#include <cstdint>
+
+constexpr uint32_t LUT_SIZE = 256U;
+constexpr float TWO_PI = 6.28318530718F;
+constexpr float DAC_MIDPOINT = 2047.5F;
+constexpr float DAC_AMPLITUDE = 2047.5F;
+
+alignas(2 * LUT_SIZE) uint16_t sineLut[LUT_SIZE];
+
+void generateSineLut()
+{
+    for (uint32_t i = 0U; i < LUT_SIZE; ++i) {
+        const float phase =
+            TWO_PI * static_cast<float>(i) /
+            static_cast<float>(LUT_SIZE);
+
+        const float sample = DAC_MIDPOINT + DAC_AMPLITUDE * sinf(phase);
+
+        sineLut[i] = static_cast<uint16_t>(sample);
+    }
+}
 
 int main() {
     // =========================================================================
@@ -32,6 +55,13 @@ int main() {
     Bsp::Clock clock;
     clock.initOSC();
     clock.set48MHz();
+
+    // =========================================================================
+    // DWT
+    // =========================================================================
+
+    Bsp::Dwt dwt;
+    dwt.init();
 
     // =========================================================================
     // GPIO
@@ -132,29 +162,22 @@ int main() {
     // Sinus LUT
     // =========================================================================
 
-    constexpr uint16_t LutSize = 64U;
-    constexpr float Pi = 3.14159265358979323846f;
-    constexpr float Offset = 2047.5f;
-    constexpr float Amplitude = 1800.0f;
+    const uint32_t start = dwt.getCycles();
+    generateSineLut();
+    const uint32_t elapsed = dwt.getCycles() - start;
 
-    alignas(2 * LutSize) uint16_t waveform[LutSize];
+    const uint64_t elapsedUs =
+        Core::Time::ticksToMicrosec(elapsed, clock.getCoreClock());
 
-    for (uint16_t i = 0; i < LutSize; ++i) {
-        const float phase = (2.0f * Pi * static_cast<float>(i)) / static_cast<float>(LutSize);
-
-        const float sample = Offset + Amplitude * sinf(phase);
-
-        waveform[i] = static_cast<uint16_t>(sample + 0.5f);
-        LOG_DEBUG("waveform[%d] = %d", i, waveform[i]);
-    }
-
-    LOG_INFO("Sinus LUT OK");
+    LOG_INFO("Sinus LUT: %lu cycles, %lu us",
+            static_cast<unsigned long>(elapsed),
+            static_cast<unsigned long>(elapsedUs));
 
     // =========================================================================
     // Sinus Generation
     // =========================================================================
 
-    if (!dma.configCircularTransfer(waveform, dac.buffAddress(), 0U, LutSize, 0U, 1U, 64U)) {
+    if (!dma.configCircularTransfer(sineLut, dac.buffAddress(), 0U, LUT_SIZE, 0U, 1U, LUT_SIZE)) {
         LOG_ERROR("dma.configCircularTransfer");
     }
 
@@ -177,12 +200,12 @@ int main() {
     // Main loop
     // =========================================================================
 
-    // // Start of the main loop
-    // gpio.LED_On(LedColor::Blue);
-    // for (volatile uint32_t i = 0; i < 5000000; i++) {
-    //     __NOP();
-    // }
-    // gpio.LED_Off(LedColor::Blue);
+    // Start of the main loop
+    gpio.LED_On(LedColor::Blue);
+    for (volatile uint32_t i = 0; i < 5000000; i++) {
+        __NOP();
+    }
+    gpio.LED_Off(LedColor::Blue);
     delay.startPeriodicMs(2);
 
     while (1) {
