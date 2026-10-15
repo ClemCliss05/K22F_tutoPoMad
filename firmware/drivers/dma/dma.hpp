@@ -34,30 +34,33 @@ class Dma {
 
     void init();
 
-    // Configure a DMA transfer with independent source and destination
-    // address stepping and modulo behavior.
-    template <typename T>
-    bool configTransfer(const T *src, volatile T *dest, int16_t sourceStep, int16_t destStep,
-                        uint16_t sourceModuloCount, uint16_t destModuloCount,
-                        uint16_t samplesPerMinorLoop, uint16_t minorLoopCount);
-
-    // Configure a linear transfer.
-    template <typename T>
-    bool configLinearTransfer(const T *src, volatile T *dest, int16_t destStep,
-                              uint16_t samplesPerMinorLoop, uint16_t minorLoopCount);
-
-    // Configure a circular source and destination transfer.
-    template <typename T>
-    bool configCircularTransfer(const T *src, volatile T *dest, int16_t destStep,
-                                uint16_t sourceModuloCount, uint16_t destModuloCount,
-                                uint16_t samplesPerMinorLoop, uint16_t minorLoopCount);
-
     // Trigger one software DMA service request.
     void start();
 
     // Enable or disable hardware DMA requests.
     void enableHardwareRequests();
     void disableHardwareRequests();
+
+    // Configure a DMA transfer with independent source and destination
+    // address stepping and modulo behavior.
+    template <typename T>
+    bool configTransfer(const T *src, volatile T *dest, int16_t sourceStep, int16_t destStep,
+                        uint16_t sourceModuloCount, uint16_t destModuloCount,
+                        uint16_t samplesPerMinorLoop, uint16_t minorLoopCount);
+    // Configure a linear transfer.
+    template <typename T>
+    bool configLinearTransfer(const T *src, volatile T *dest, int16_t destStep,
+                              uint16_t samplesPerMinorLoop, uint16_t minorLoopCount);
+    // Configure a circular source and destination transfer.
+    template <typename T>
+    bool configCircularTransfer(const T *src, volatile T *dest, int16_t destStep,
+                                uint16_t sourceModuloCount, uint16_t destModuloCount,
+                                uint16_t samplesPerMinorLoop, uint16_t minorLoopCount);
+
+    // Enables automatic triggering of the target channel when this
+    // channel's major loop completes. The target transfer is started
+    // by hardware; no manual start() is required for that transfer.
+    bool configureMajorLoopLink(Channel target);
 
     // Return transfer status.
     bool isComplete() const;

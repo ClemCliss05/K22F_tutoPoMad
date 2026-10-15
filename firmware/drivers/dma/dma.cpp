@@ -21,6 +21,32 @@ void Dma::disableHardwareRequests() {
     DMA0->CERQ = channel_;
 }
 
+bool Dma::configureMajorLoopLink(Channel target) {
+    const uint8_t targetChannel = static_cast<uint8_t>(target);
+
+    // Reject invalid or self-linking targets.
+    if (targetChannel >= 16U || targetChannel == channel_) {
+        return false;
+    }
+
+    // Do not modify a channel while it is active or completed.
+    const uint16_t csr = DMA0->TCD[channel_].CSR;
+
+    if ((csr & DMA_CSR_ACTIVE_MASK) != 0U || (csr & DMA_CSR_DONE_MASK) != 0U) {
+        return false;
+    }
+
+    // Configure the major-loop link to the target channel.
+    uint16_t newCsr = csr;
+    newCsr &= static_cast<uint16_t>(~DMA_CSR_MAJORLINKCH_MASK);
+    newCsr |= DMA_CSR_MAJORLINKCH(targetChannel);
+    newCsr |= DMA_CSR_MAJORELINK_MASK;
+
+    DMA0->TCD[channel_].CSR = newCsr;
+
+    return true;
+}
+
 bool Dma::isComplete() const {
     return (DMA0->TCD[channel_].CSR & DMA_CSR_DONE_MASK) != 0U;
 }
