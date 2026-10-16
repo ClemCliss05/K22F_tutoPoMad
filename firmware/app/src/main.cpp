@@ -78,69 +78,69 @@ int main() {
     // DMA
     // =========================================================================
 
-    // CONFIGURATION
+    // Scatter-gather test buffers.
+    uint8_t srcA[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+    uint8_t srcB[8] = {10, 11, 12, 13, 14, 15, 16, 17};
+    uint8_t srcC[8] = {20, 21, 22, 23, 24, 25, 26, 27};
+
+    uint8_t dstA[8] = {};
+    uint8_t dstB[8] = {};
+    uint8_t dstC[8] = {};
+
+    Drivers::Dma::ScatterGatherDescriptor descriptorB{};
+    Drivers::Dma::ScatterGatherDescriptor descriptorC{};
+
     Drivers::Dma dma0(Drivers::Dma::Channel::Channel0);
-    Drivers::Dma dma1(Drivers::Dma::Channel::Channel1);
-
     dma0.init();
-    dma1.init();
 
-    uint8_t srcDma[16] = {};
-    uint8_t dst0[16] = {};
-    uint8_t dst1[16] = {};
+    const bool configuredA =
+        dma0.configLinearTransfer(srcA, dstA, 1, 1, 8);
 
-    for (uint8_t i = 0; i < 16U; ++i) {
-        srcDma[i] = i;
-    }
+    const bool configuredB =
+        dma0.configureScatterGatherDescriptor(
+            descriptorB, srcB, dstB, 1, 1, 0, 0, 1, 8);
 
-    const bool configured0 = dma0.configLinearTransfer(srcDma, dst0, 1, 1, 16);
+    const bool configuredC =
+        dma0.configureScatterGatherDescriptor(
+            descriptorC, srcC, dstC, 1, 1, 0, 0, 1, 8);
 
-    const bool configured1 = dma1.configLinearTransfer(srcDma, dst1, 1, 1, 16);
+    const bool linkedBC =
+        dma0.linkScatterGatherDescriptors(descriptorB, descriptorC);
 
-    const bool linkedMinor = dma0.configureMinorLoopLink(Drivers::Dma::Channel::Channel1);
-    const bool linkedMajor = dma0.configureMajorLoopLink(Drivers::Dma::Channel::Channel1);
+    const bool linkedAB =
+        dma0.configureScatterGather(descriptorB);
 
-    // EXECUTION
-    if (configured0 && configured1 && linkedMinor && linkedMajor) {
-        for (uint8_t i = 0; i < 16U; ++i) {
-            const uint16_t before0 = DMA0->TCD[0].CITER_ELINKYES & DMA_CITER_ELINKYES_CITER_MASK;
+    bool transferOk = false;
 
-            const uint16_t before1 = DMA0->TCD[1].CITER_ELINKNO & DMA_CITER_ELINKNO_CITER_MASK;
+    if (configuredA && configuredB && configuredC &&
+        linkedBC && linkedAB) {
+
+        uint32_t timeout = 1'000'000U;
+
+        while (dstC[7] != srcC[7] &&
+            !dma0.hasError() &&
+            timeout > 0U) {
 
             dma0.start();
-
-            uint32_t timeout = 1000000U;
-
-            while (timeout > 0U) {
-                const uint16_t after0 = DMA0->TCD[0].CITER_ELINKYES & DMA_CITER_ELINKYES_CITER_MASK;
-
-                const uint16_t after1 = DMA0->TCD[1].CITER_ELINKNO & DMA_CITER_ELINKNO_CITER_MASK;
-
-                if (after0 != before0 && after1 != before1) {
-                    break;
-                }
-
-                if (dma0.hasError() || dma1.hasError()) {
-                    break;
-                }
-
-                --timeout;
-            }
-
-            if (dma0.hasError() || dma1.hasError()) {
-                LOG_ERROR("DMA hardware error");
-                break;
-            }
-
-            if (timeout == 0U) {
-                LOG_ERROR("DMA linking timeout");
-                break;
-            }
+            --timeout;
         }
+
+        transferOk = (dstC[7] == srcC[7]) &&
+                    !dma0.hasError();
     }
 
-    for (uint8_t i = 0; i < 16U; ++i) {
-        LOG_DEBUG("dst0[%d] = %d \t | \t dst1[%d] = %d", i, dst0[i], i, dst1[i]);
+    bool buffersMatch = true;
+
+    for (uint8_t i = 0U; i < 8U; ++i) {
+        buffersMatch = buffersMatch &&
+                    (dstA[i] == srcA[i]) &&
+                    (dstB[i] == srcB[i]) &&
+                    (dstC[i] == srcC[i]);
+    }
+
+    for (uint8_t i = 0; i < 8U; ++i) {
+        LOG_DEBUG("dstA[%d] = %d \t | \t dstB[%d] = %d \t | \t dstC[%d] = %d",
+            i, dstA[i], i, dstB[i], i, dstC[i]);
     }
 
     LOG_INFO("DMA OK");
