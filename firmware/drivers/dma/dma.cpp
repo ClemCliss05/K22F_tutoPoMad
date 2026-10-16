@@ -30,19 +30,47 @@ bool Dma::configureMajorLoopLink(Channel target) {
     }
 
     // Do not modify a channel while it is active or completed.
-    const uint16_t csr = DMA0->TCD[channel_].CSR;
-
-    if ((csr & DMA_CSR_ACTIVE_MASK) != 0U || (csr & DMA_CSR_DONE_MASK) != 0U) {
+    if ((DMA0->TCD[channel_].CSR & DMA_CSR_ACTIVE_MASK) != 0U ||
+        (DMA0->TCD[channel_].CSR & DMA_CSR_DONE_MASK) != 0U) {
         return false;
     }
 
     // Configure the major-loop link to the target channel.
-    uint16_t newCsr = csr;
-    newCsr &= static_cast<uint16_t>(~DMA_CSR_MAJORLINKCH_MASK);
-    newCsr |= DMA_CSR_MAJORLINKCH(targetChannel);
-    newCsr |= DMA_CSR_MAJORELINK_MASK;
+    DMA0->TCD[channel_].CSR &= static_cast<uint16_t>(~DMA_CSR_MAJORLINKCH_MASK);
+    DMA0->TCD[channel_].CSR |= DMA_CSR_MAJORLINKCH(targetChannel);
+    DMA0->TCD[channel_].CSR |= DMA_CSR_MAJORELINK_MASK;
 
-    DMA0->TCD[channel_].CSR = newCsr;
+    return true;
+}
+
+bool Dma::configureMinorLoopLink(Channel target) {
+    const uint8_t targetChannel = static_cast<uint8_t>(target);
+
+    // Reject invalid or self-linking targets.
+    if (targetChannel >= 16U || targetChannel == channel_) {
+        return false;
+    }
+
+    auto &tcd = DMA0->TCD[channel_];
+
+    // Do not modify a channel while it is active or completed.
+    if ((tcd.CSR & DMA_CSR_ACTIVE_MASK) != 0U || (tcd.CSR & DMA_CSR_DONE_MASK) != 0U) {
+        return false;
+    }
+
+    const uint16_t citer = tcd.CITER_ELINKNO & DMA_CITER_ELINKNO_CITER_MASK;
+    const uint16_t biter = tcd.BITER_ELINKNO & DMA_BITER_ELINKNO_BITER_MASK;
+
+    // ELINKYES uses a 9-bit iteration counter.
+    if (citer == 0U || biter == 0U || citer > 0x1FFU || biter > 0x1FFU) {
+        return false;
+    }
+
+    tcd.CITER_ELINKYES = DMA_CITER_ELINKYES_ELINK_MASK | DMA_CITER_ELINKYES_LINKCH(targetChannel) |
+                         DMA_CITER_ELINKYES_CITER(citer);
+
+    tcd.BITER_ELINKYES = DMA_BITER_ELINKYES_ELINK_MASK | DMA_BITER_ELINKYES_LINKCH(targetChannel) |
+                         DMA_BITER_ELINKYES_BITER(biter);
 
     return true;
 }

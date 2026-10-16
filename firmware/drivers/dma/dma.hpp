@@ -57,9 +57,10 @@ class Dma {
                                 uint16_t sourceModuloCount, uint16_t destModuloCount,
                                 uint16_t samplesPerMinorLoop, uint16_t minorLoopCount);
 
-    // Enables automatic triggering of the target channel when this
-    // channel's major loop completes. The target transfer is started
-    // by hardware; no manual start() is required for that transfer.
+    // Triggers the target channel on each minor loop, except the last one,
+    // which is triggered by the major loop link if configured.
+    bool configureMinorLoopLink(Channel target);
+    // Automatically triggers the target channel when the source major loop completes.
     bool configureMajorLoopLink(Channel target);
 
     // Return transfer status.

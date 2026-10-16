@@ -78,31 +78,69 @@ int main() {
     // DMA
     // =========================================================================
 
+    // CONFIGURATION
     Drivers::Dma dma0(Drivers::Dma::Channel::Channel0);
     Drivers::Dma dma1(Drivers::Dma::Channel::Channel1);
+
     dma0.init();
     dma1.init();
-    uint8_t srcDma[16] = {0};
-    uint8_t dstDma[32] = {0};
-    for (uint8_t i = 0; i < 16; i++) {
+
+    uint8_t srcDma[16] = {};
+    uint8_t dst0[16] = {};
+    uint8_t dst1[16] = {};
+
+    for (uint8_t i = 0; i < 16U; ++i) {
         srcDma[i] = i;
     }
 
-    dma0.configLinearTransfer(srcDma, dstDma, 1, 1, 16);
-    dma1.configLinearTransfer(srcDma, (dstDma + 31), -1, 1, 16);
+    const bool configured0 = dma0.configLinearTransfer(srcDma, dst0, 1, 1, 16);
 
-    dma0.configureMajorLoopLink(Drivers::Dma::Channel::Channel1);
-    for (uint8_t j = 0; j < 16; j++) {
-        dma0.start();
-        for (uint8_t n = 0; n < 32; n++) {
-            LOG_DEBUG("dstDma[%d] = %d", n, dstDma[n]);
+    const bool configured1 = dma1.configLinearTransfer(srcDma, dst1, 1, 1, 16);
+
+    const bool linkedMinor = dma0.configureMinorLoopLink(Drivers::Dma::Channel::Channel1);
+    const bool linkedMajor = dma0.configureMajorLoopLink(Drivers::Dma::Channel::Channel1);
+
+    // EXECUTION
+    if (configured0 && configured1 && linkedMinor && linkedMajor) {
+        for (uint8_t i = 0; i < 16U; ++i) {
+            const uint16_t before0 = DMA0->TCD[0].CITER_ELINKYES & DMA_CITER_ELINKYES_CITER_MASK;
+
+            const uint16_t before1 = DMA0->TCD[1].CITER_ELINKNO & DMA_CITER_ELINKNO_CITER_MASK;
+
+            dma0.start();
+
+            uint32_t timeout = 1000000U;
+
+            while (timeout > 0U) {
+                const uint16_t after0 = DMA0->TCD[0].CITER_ELINKYES & DMA_CITER_ELINKYES_CITER_MASK;
+
+                const uint16_t after1 = DMA0->TCD[1].CITER_ELINKNO & DMA_CITER_ELINKNO_CITER_MASK;
+
+                if (after0 != before0 && after1 != before1) {
+                    break;
+                }
+
+                if (dma0.hasError() || dma1.hasError()) {
+                    break;
+                }
+
+                --timeout;
+            }
+
+            if (dma0.hasError() || dma1.hasError()) {
+                LOG_ERROR("DMA hardware error");
+                break;
+            }
+
+            if (timeout == 0U) {
+                LOG_ERROR("DMA linking timeout");
+                break;
+            }
         }
     }
-    for (uint8_t k = 0; k < (16 - 1); k++) {
-        dma1.start();
-        for (uint8_t n = 0; n < 32; n++) {
-            LOG_DEBUG("dstDma[%d] = %d", n, dstDma[n]);
-        }
+
+    for (uint8_t i = 0; i < 16U; ++i) {
+        LOG_DEBUG("dst0[%d] = %d \t | \t dst1[%d] = %d", i, dst0[i], i, dst1[i]);
     }
 
     LOG_INFO("DMA OK");
@@ -117,7 +155,6 @@ int main() {
         __NOP();
     }
     gpio.LED_Off(LedColor::Blue);
-    delay.startPeriodicMs(2);
 
     while (1) {
         // In reality, the CPU can sleep:
