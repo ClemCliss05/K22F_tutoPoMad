@@ -6,39 +6,59 @@ Dma::Dma(Channel channel) : channel_(static_cast<uint8_t>(channel)) {}
 
 void Dma::init() {
     SIM->SCGC7 |= SIM_SCGC7_DMA_MASK;
+
+    // Clear pending channel error and completion status.
+    DMA0->CERR = static_cast<uint8_t>(channel_);
+    DMA0->CDNE = static_cast<uint8_t>(channel_);
 }
 
-void Dma::start() {
-    // Trigger one DMA service request.
-    DMA0->SSRT = channel_;
-}
+bool Dma::configureScatterGather(const ScatterGatherDescriptor &next) {
 
-void Dma::enableHardwareRequests() {
-    DMA0->SERQ = channel_;
-}
+    auto &tcd = DMA0->TCD[channel_];
 
-void Dma::disableHardwareRequests() {
-    DMA0->CERQ = channel_;
-}
-
-bool Dma::configureMajorLoopLink(Channel target) {
-    const uint8_t targetChannel = static_cast<uint8_t>(target);
-
-    // Reject invalid or self-linking targets.
-    if (targetChannel >= 16U || targetChannel == channel_) {
+    // Do not modify an active, completed or major-linked channel.
+    if ((tcd.CSR & DMA_CSR_ACTIVE_MASK) != 0U || (tcd.CSR & DMA_CSR_DONE_MASK) != 0U ||
+        (tcd.CSR & DMA_CSR_MAJORELINK_MASK) != 0U) {
         return false;
     }
 
-    // Do not modify a channel while it is active or completed.
-    if ((DMA0->TCD[channel_].CSR & DMA_CSR_ACTIVE_MASK) != 0U ||
-        (DMA0->TCD[channel_].CSR & DMA_CSR_DONE_MASK) != 0U) {
+    const std::uintptr_t address = reinterpret_cast<std::uintptr_t>(&next.tcd_);
+
+    // eDMA requires 32-byte alignment for RAM-resident TCDs.
+    if ((address & 0x1FU) != 0U) {
         return false;
     }
 
-    // Configure the major-loop link to the target channel.
-    DMA0->TCD[channel_].CSR &= static_cast<uint16_t>(~DMA_CSR_MAJORLINKCH_MASK);
-    DMA0->TCD[channel_].CSR |= DMA_CSR_MAJORLINKCH(targetChannel);
-    DMA0->TCD[channel_].CSR |= DMA_CSR_MAJORELINK_MASK;
+    // Ensure descriptor writes are visible before enabling scatter-gather.
+    __DMB();
+
+    tcd.DLAST_SGA = static_cast<int32_t>(static_cast<uint32_t>(address));
+
+    tcd.CSR |= DMA_CSR_ESG_MASK;
+
+    return true;
+}
+
+bool Dma::linkScatterGatherDescriptors(ScatterGatherDescriptor &current,
+                                       const ScatterGatherDescriptor &next) {
+
+    // Reject a self-link.
+    if (&current == &next) {
+        return false;
+    }
+
+    const std::uintptr_t address = reinterpret_cast<std::uintptr_t>(&next.tcd_);
+
+    if ((address & 0x1FU) != 0U) {
+        return false;
+    }
+
+    current.tcd_.DLAST_SGA = static_cast<int32_t>(static_cast<uint32_t>(address));
+
+    current.tcd_.CSR |= DMA_CSR_ESG_MASK;
+
+    // Ensure the updated link is visible before the DMA reads it.
+    __DMB();
 
     return true;
 }
@@ -73,6 +93,41 @@ bool Dma::configureMinorLoopLink(Channel target) {
                          DMA_BITER_ELINKYES_BITER(biter);
 
     return true;
+}
+
+bool Dma::configureMajorLoopLink(Channel target) {
+    const uint8_t targetChannel = static_cast<uint8_t>(target);
+
+    // Reject invalid or self-linking targets.
+    if (targetChannel >= 16U || targetChannel == channel_) {
+        return false;
+    }
+
+    // Do not modify a channel while it is active or completed.
+    if ((DMA0->TCD[channel_].CSR & DMA_CSR_ACTIVE_MASK) != 0U ||
+        (DMA0->TCD[channel_].CSR & DMA_CSR_DONE_MASK) != 0U) {
+        return false;
+    }
+
+    // Configure the major-loop link to the target channel.
+    DMA0->TCD[channel_].CSR &= static_cast<uint16_t>(~DMA_CSR_MAJORLINKCH_MASK);
+    DMA0->TCD[channel_].CSR |= DMA_CSR_MAJORLINKCH(targetChannel);
+    DMA0->TCD[channel_].CSR |= DMA_CSR_MAJORELINK_MASK;
+
+    return true;
+}
+
+void Dma::start() {
+    // Trigger one DMA service request.
+    DMA0->SSRT = channel_;
+}
+
+void Dma::enableHardwareRequests() {
+    DMA0->SERQ = channel_;
+}
+
+void Dma::disableHardwareRequests() {
+    DMA0->CERQ = channel_;
 }
 
 bool Dma::isComplete() const {
