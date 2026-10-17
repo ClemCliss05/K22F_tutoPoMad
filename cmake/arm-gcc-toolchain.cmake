@@ -7,13 +7,6 @@
 
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
-# ------------------------------------------------------------------------------
-# CPU configuration
-# IMPORTANT:
-# This value must match the Cortex-M CPU of the target MCU.
-# Change this value when adapting this platform to another MCU.
-# ------------------------------------------------------------------------------
-set(PLATFORM_CPU_FLAGS "-mcpu=cortex-m4 -mthumb")
 
 # ------------------------------------------------------------------------------
 # Toolchain prefix
@@ -38,11 +31,21 @@ set(CMAKE_OBJDUMP ${TOOLCHAIN_PREFIX}objdump)
 set(CMAKE_SIZE    ${TOOLCHAIN_PREFIX}size)
 
 # ------------------------------------------------------------------------------
-# Avoid execution tests during configuration
-# Embedded binaries cannot run on host machine
+# CPU configuration
+# IMPORTANT:
+# This value must match the Cortex-M CPU of the target MCU.
+# Change this value when adapting this platform to another MCU.
 # ------------------------------------------------------------------------------
 
-set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+set(MCU_CPU_FLAGS "-mcpu=cortex-m4 -mthumb")
+
+# ------------------------------------------------------------------------------
+# System include directories
+# ------------------------------------------------------------------------------
+
+set(MCU_SYSTEM_INCLUDE_FLAGS
+    "-isystem /usr/include/newlib"
+)
 
 # ------------------------------------------------------------------------------
 # Default compiler flags
@@ -50,6 +53,19 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 # CPU-specific flags are defined by the selected platform.
 # ------------------------------------------------------------------------------
 
-set(CMAKE_C_FLAGS_INIT "${PLATFORM_CPU_FLAGS} -ffreestanding")
-set(CMAKE_CXX_FLAGS_INIT "${PLATFORM_CPU_FLAGS} -ffreestanding -fno-exceptions -fno-rtti")
-set(CMAKE_ASM_FLAGS_INIT "${PLATFORM_CPU_FLAGS}")
+set(CMAKE_C_FLAGS_INIT
+    "${MCU_CPU_FLAGS} -ffreestanding ${MCU_SYSTEM_INCLUDE_FLAGS}"
+)
+set(CMAKE_CXX_FLAGS_INIT
+    "${MCU_CPU_FLAGS} -ffreestanding -fno-exceptions -fno-rtti ${MCU_SYSTEM_INCLUDE_FLAGS}"
+)
+set(CMAKE_ASM_FLAGS_INIT 
+    "${MCU_CPU_FLAGS}"
+)
+
+# ------------------------------------------------------------------------------
+# Avoid execution tests during configuration
+# Embedded binaries cannot run on host machine
+# ------------------------------------------------------------------------------
+
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)

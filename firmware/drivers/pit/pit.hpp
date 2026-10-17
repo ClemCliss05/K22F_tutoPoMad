@@ -4,36 +4,50 @@
 
 namespace Drivers {
 
+/**
+ * Base class for configuring a K22F PIT timer channel.
+ */
 class Pit {
   public:
-    /*
-     * PIT driver functions
-     */
-
-    explicit Pit(uint32_t clockHz);
-
     void init();
-
-    /**
-     * Start the PIT as a periodic 1 ms system tick.
-     *
-     * The PIT generates one interrupt every millisecond.
-     */
-    bool start();
-
     void stop();
 
-    /**
-     * Return the number of elapsed PIT ticks since initialization.
-     *
-     * One tick corresponds to 1 ms.
-     */
-    uint32_t getTicks() const;
-
+    uint32_t getInterruptCount() const;
     uint32_t getClockHz() const;
 
-  private:
-    uint32_t clockHz_;
+    // Register a function called when this PIT channel interrupts.
+    void setCallback(void (*callback)(void *), void *context);
+
+  protected:
+    Pit(uint32_t busClockHz, uint8_t channel);
+
+    bool configure(uint64_t ticks);
+
+    uint32_t busClockHz_;
+    uint8_t channel_;
+};
+
+/**
+ * Provides the system time base using a periodic PIT interrupt.
+ * PIT0 is reserved for the 1 ms system tick.
+ */
+class PitSystem : public Pit {
+  public:
+    explicit PitSystem(uint32_t busClockHz);
+
+    bool start();
+};
+
+/**
+ * Provides a configurable PIT channel for periodic timing operations.
+ */
+class PitChannel : public Pit {
+  public:
+    enum class Channel : uint8_t { Channel1 = 1U, Channel2 = 2U, Channel3 = 3U };
+
+    PitChannel(uint32_t busClockHz, Channel channel);
+
+    bool startUs(uint32_t periodUs);
 };
 
 } // namespace Drivers

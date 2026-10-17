@@ -4,8 +4,10 @@
 #include "uart.hpp"
 
 namespace Services {
-
-class UartLoggerBackend : public ILoggerBackend {
+/**
+ * Sends logger messages through a UART interface.
+ */
+class UartLoggerBackend : public Core::ILoggerBackend {
   public:
     /**
      * Use an existing UART driver as the logger output.

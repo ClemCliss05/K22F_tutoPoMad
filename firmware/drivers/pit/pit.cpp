@@ -5,69 +5,122 @@
 
 namespace Drivers {
 
-Pit::Pit(uint32_t clockHz) : clockHz_(clockHz) {}
+Pit::Pit(uint32_t busClockHz, uint8_t channel) : busClockHz_(busClockHz), channel_(channel) {}
 
 void Pit::init() {
-    // Enable PIT clock.
+    // Enable PIT peripheral clock.
     SIM->SCGC6 |= SIM_SCGC6_PIT_MASK;
 
-    // Disable PIT and reset configuration.
-    PIT->MCR = 0;
-    PIT->CHANNEL[0].TCTRL = 0;
+    // Enable PIT module.
+    PIT->MCR = 0U;
 
-    // Clear any pending interrupt flag.
-    PIT->CHANNEL[0].TFLG = PIT_TFLG_TIF_MASK;
+    // Stop selected channel before configuration.
+    PIT->CHANNEL[channel_].TCTRL = 0U;
 
-    // Enable PIT channel 0 interrupt in the NVIC.
-    NVIC_EnableIRQ(PIT0_IRQn);
+    // Clear pending interrupt flag.
+    PIT->CHANNEL[channel_].TFLG = PIT_TFLG_TIF_MASK;
+
+    // Enable the corresponding IRQ.
+    switch (channel_) {
+    case 0:
+        NVIC_EnableIRQ(PIT0_IRQn);
+        break;
+
+    case 1:
+        NVIC_EnableIRQ(PIT1_IRQn);
+        break;
+
+    case 2:
+        NVIC_EnableIRQ(PIT2_IRQn);
+        break;
+
+    case 3:
+        NVIC_EnableIRQ(PIT3_IRQn);
+        break;
+
+    default:
+        break;
+    }
 }
 
-bool Pit::start() {
-    // The PIT must generate one interrupt every 1 ms.
-    //
-    // Example:
-    // PIT clock = 48 MHz
-    // 1 ms = 48,000 PIT clock ticks
-    //
-    // PIT counts from LDVAL down to 0, therefore:
-    // LDVAL = number_of_ticks - 1
-    const uint64_t ticks = (static_cast<uint64_t>(clockHz_) + 999ULL) / 1000ULL;
+bool Pit::configure(uint64_t ticks) {
+    /*
+     * LDVAL is 32-bit and represents ticks - 1.
+     * Therefore the maximum period is UINT32_MAX + 1 ticks.
+     */
+    constexpr uint64_t maxTicks = static_cast<uint64_t>(UINT32_MAX) + 1ULL;
 
-    if (ticks == 0U || ticks > UINT32_MAX) {
+    if (ticks == 0U || ticks > maxTicks) {
         return false;
     }
 
     // Stop the timer before changing its configuration.
     stop();
 
-    // Configure the 1 ms period.
-    PIT->CHANNEL[0].LDVAL = static_cast<uint32_t>(ticks - 1U);
+    PIT->CHANNEL[channel_].LDVAL = static_cast<uint32_t>(ticks - 1U);
 
     // Clear any pending timeout flag.
-    PIT->CHANNEL[0].TFLG = PIT_TFLG_TIF_MASK;
+    PIT->CHANNEL[channel_].TFLG = PIT_TFLG_TIF_MASK;
 
-    // Reset the software tick counter.
-    Interrupt::pit0Ticks = 0U;
-
-    // Enable PIT channel 0 interrupt.
-    PIT->CHANNEL[0].TCTRL |= PIT_TCTRL_TIE_MASK;
-
-    // Start channel 0.
-    PIT->CHANNEL[0].TCTRL |= PIT_TCTRL_TEN_MASK;
+    // Enable interrupt and timer.
+    PIT->CHANNEL[channel_].TCTRL = PIT_TCTRL_TIE_MASK | PIT_TCTRL_TEN_MASK;
 
     return true;
 }
 
 void Pit::stop() {
-    PIT->CHANNEL[0].TCTRL &= ~PIT_TCTRL_TEN_MASK;
+    PIT->CHANNEL[channel_].TCTRL &= ~PIT_TCTRL_TEN_MASK;
 }
 
-uint32_t Pit::getTicks() const {
-    return Interrupt::pit0Ticks;
+uint32_t Pit::getInterruptCount() const {
+    return Interrupt::pitInterruptCount[channel_];
 }
 
 uint32_t Pit::getClockHz() const {
-    return clockHz_;
+    return busClockHz_;
+}
+
+void Pit::setCallback(void (*callback)(void *), void *context) {
+    Interrupt::setPitCallback(channel_, callback, context);
+}
+
+// -----------------------------------------------------------------------------
+// PitSystem
+// -----------------------------------------------------------------------------
+
+PitSystem::PitSystem(uint32_t busClockHz) : Pit(busClockHz, 0U) {}
+
+bool PitSystem::start() {
+    // PIT0 is the system tick: 1 ms period.
+    // Example: PIT clock = 48 MHz
+    // 1 ms = 48,000 PIT clock ticks
+    // PIT0 generates an interruption every ms
+    const uint64_t ticks = (static_cast<uint64_t>(busClockHz_) + 999ULL) / 1000ULL;
+
+    Interrupt::pitInterruptCount[0] = 0U;
+
+    return configure(ticks);
+}
+
+// -----------------------------------------------------------------------------
+// PitChannel
+// -----------------------------------------------------------------------------
+
+PitChannel::PitChannel(uint32_t busClockHz, Channel channel)
+    : Pit(busClockHz, static_cast<uint8_t>(channel)) {}
+
+bool PitChannel::startUs(uint32_t periodUs) {
+    if (periodUs == 0U || busClockHz_ == 0U) {
+        return false;
+    }
+
+    // Convert the requested period to PIT ticks, rounding up.
+    const uint64_t ticks =
+        (static_cast<uint64_t>(periodUs) * busClockHz_ + 999'999ULL) / 1'000'000ULL;
+
+    Interrupt::pitInterruptCount[channel_] = 0U;
+
+    return configure(ticks);
 }
 
 } // namespace Drivers

@@ -31,6 +31,7 @@ endif()
 
 option(ANALYSIS "Build hardware independent firmware parts for analysis" OFF)
 option(TESTS "Enable ASAN/UBSAN and tests" OFF)
+option(ENABLE_FPU "Enable hardware floating-point support (Cortex-M4F)" OFF)
 
 # ------------------------------------------------------------------------------
 # Platform CPU Flags definition test
@@ -38,9 +39,9 @@ option(TESTS "Enable ASAN/UBSAN and tests" OFF)
 
 if(NOT ANALYSIS)
 
-    if(NOT DEFINED PLATFORM_CPU_FLAGS)
+    if(NOT DEFINED MCU_CPU_FLAGS)
         message(FATAL_ERROR
-            "CPU is not defined by the toolchain -> uncomment and complete line 16 of cmake/arm-gcc-toolchain.cmake"
+            "CPU is not defined by the toolchain -> uncomment and complete line 40 of cmake/arm-gcc-toolchain.cmake"
         )
     endif()
 
@@ -70,6 +71,20 @@ else()
     # --------------------------------------------------------------------------
     # Embedded target
     # --------------------------------------------------------------------------
+
+    if(ENABLE_FPU)
+        message(STATUS "Hardware FPU support enabled")
+
+        add_compile_options(
+            -mfpu=fpv4-sp-d16
+            -mfloat-abi=hard
+        )
+
+        add_link_options(
+            -mfpu=fpv4-sp-d16
+            -mfloat-abi=hard
+        )
+    endif()
 
     add_subdirectory(firmware)
 

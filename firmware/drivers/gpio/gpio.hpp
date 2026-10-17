@@ -3,17 +3,19 @@
 #include <cstdint>
 
 namespace Drivers {
+/**
+ * Configures and controls K22F GPIO pins.
+ */
 class Gpio {
   public:
-    /*
-     * LED driver functions
-     * PTA1 -> LEDRGB_RED
-     * PTA2 -> LEDRGB_GREEN
-     * PTD5 -> LEDRGB_BLUE
-     */
-
     enum class LedColor : uint8_t { Red, Green, Blue, Cyan, Yellow, Magenta, White };
 
+    /*
+     * LED driver functions
+     * Pin PTA1 -> LEDRGB_RED
+     * Pin PTA2 -> LEDRGB_GREEN
+     * Pin PTD5 -> LEDRGB_BLUE
+     */
     void LED_Init(void);
     void LED_On(void);
     void LED_On(LedColor color);
@@ -24,10 +26,9 @@ class Gpio {
 
     /*
      * Push Button driver functions
-     * PTB17 -> PB1
-     * PTC1  -> PB2
+     * Pin PTB17 -> PB1
+     * Pin PTC1  -> PB2
      */
-
     void PBs_Init(void);
     bool PB1_GetState(void);
     bool PB2_GetState(void);

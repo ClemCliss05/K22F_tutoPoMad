@@ -52,7 +52,7 @@ uint16_t Adc::read() {
     return ADC0->R[0];
 }
 
-uint8_t Adc::toPercent(uint16_t adcValue) {
+uint8_t Adc::toPercent(uint16_t adcValue) const {
     return static_cast<uint8_t>((static_cast<uint32_t>(adcValue) * 100U) / 4095U);
 }
 } // namespace Drivers

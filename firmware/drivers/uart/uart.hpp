@@ -4,14 +4,15 @@
 #include <cstdint>
 
 namespace Drivers {
+/**
+ * Configures and controls a K22F UART peripheral.
+ */
 class Uart {
   public:
     /*
-     * LED driver functions
-     * PTE0 -> UART1_TX
-     * PTE1 -> UART1_RX
+     * Pin PTE0 -> UART1_TX
+     * Pin PTE1 -> UART1_RX
      */
-
     void init();
 
     bool isTxReady() const;

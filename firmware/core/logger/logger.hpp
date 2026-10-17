@@ -5,6 +5,7 @@
 #include "logger_backend.hpp"
 #include "ringbuffer.hpp"
 
+namespace Core {
 enum class LogLevel : std::uint8_t { Error, Warn, Info, Debug };
 
 #define LOG_LEVEL_ERROR 0
@@ -16,6 +17,9 @@ enum class LogLevel : std::uint8_t { Error, Warn, Info, Debug };
 #define LOG_LEVEL LOG_LEVEL_DEBUG
 #endif
 
+/**
+ * Provides application logging through a configurable backend.
+ */
 class Logger {
   public:
     Logger(RingBuffer &buffer, ILoggerBackend &backend);
@@ -32,11 +36,13 @@ class Logger {
 
 extern Logger *global_logger;
 
+} // namespace Core
+
 #if LOG_LEVEL >= LOG_LEVEL_ERROR
 #define LOG_ERROR(...)                                                                             \
     do {                                                                                           \
-        if (global_logger)                                                                         \
-            global_logger->log(LogLevel::Error, __VA_ARGS__);                                      \
+        if (Core::global_logger)                                                                   \
+            Core::global_logger->log(Core::LogLevel::Error, __VA_ARGS__);                          \
     } while (0)
 #else
 #define LOG_ERROR(...)
@@ -45,8 +51,8 @@ extern Logger *global_logger;
 #if LOG_LEVEL >= LOG_LEVEL_WARN
 #define LOG_WARN(...)                                                                              \
     do {                                                                                           \
-        if (global_logger)                                                                         \
-            global_logger->log(LogLevel::Warn, __VA_ARGS__);                                       \
+        if (Core::global_logger)                                                                   \
+            Core::global_logger->log(Core::LogLevel::Warn, __VA_ARGS__);                           \
     } while (0)
 #else
 #define LOG_WARN(...)
@@ -55,8 +61,8 @@ extern Logger *global_logger;
 #if LOG_LEVEL >= LOG_LEVEL_INFO
 #define LOG_INFO(...)                                                                              \
     do {                                                                                           \
-        if (global_logger)                                                                         \
-            global_logger->log(LogLevel::Info, __VA_ARGS__);                                       \
+        if (Core::global_logger)                                                                   \
+            Core::global_logger->log(Core::LogLevel::Info, __VA_ARGS__);                           \
     } while (0)
 #else
 #define LOG_INFO(...)
@@ -65,8 +71,8 @@ extern Logger *global_logger;
 #if LOG_LEVEL >= LOG_LEVEL_DEBUG
 #define LOG_DEBUG(...)                                                                             \
     do {                                                                                           \
-        if (global_logger)                                                                         \
-            global_logger->log(LogLevel::Debug, __VA_ARGS__);                                      \
+        if (Core::global_logger)                                                                   \
+            Core::global_logger->log(Core::LogLevel::Debug, __VA_ARGS__);                          \
     } while (0)
 #else
 #define LOG_DEBUG(...)

@@ -2,11 +2,9 @@
 
 // BSP platform
 #include "clock.hpp"
-#include "interrupt.hpp"
 
 // Drivers
-#include "adc.hpp"
-#include "ftm.hpp"
+#include "dma.hpp"
 #include "gpio.hpp"
 #include "pit.hpp"
 #include "uart.hpp"
@@ -14,6 +12,7 @@
 // Core
 #include "logger.hpp"
 #include "ringbuffer.hpp"
+#include "time.hpp"
 
 // Services
 #include "delay.hpp"
@@ -25,7 +24,6 @@ int main() {
     // =========================================================================
 
     Bsp::Clock clock;
-
     clock.initOSC();
     clock.set48MHz();
 
@@ -41,7 +39,7 @@ int main() {
     using LedColor = Drivers::Gpio::LedColor;
 
     // =========================================================================
-    // UART + Logger
+    // UART + Logger + RingBuffer
     // =========================================================================
 
     Drivers::Uart uart;
@@ -51,56 +49,85 @@ int main() {
 
     char loggerBuffer[128];
 
-    RingBuffer ringBuffer(loggerBuffer, sizeof(loggerBuffer));
+    Core::RingBuffer ringBuffer(loggerBuffer, sizeof(loggerBuffer));
 
-    Logger logger(ringBuffer, uartBackend);
+    Core::Logger logger(ringBuffer, uartBackend);
 
-    LOG_DEBUG("UART OK");
-
-    // =========================================================================
-    // ADC0
-    // =========================================================================
-
-    Drivers::Adc adc;
-
-    adc.init();
-
-    LOG_DEBUG("ADC0 OK");
+    LOG_INFO("UART OK");
 
     // =========================================================================
-    // PIT0
+    // PIT0 SYSTEM
     // =========================================================================
 
-    Drivers::Pit pit(clock.getBusClock());
+    Drivers::PitSystem pitSystem(clock.getBusClock());
 
-    pit.init();
-    pit.start();
+    pitSystem.init();
+    pitSystem.start();
 
-    LOG_DEBUG("PIT0 OK");
+    LOG_INFO("PIT0 SYSTEM OK");
 
     // =========================================================================
     // DELAY
     // =========================================================================
 
-    Services::Delay delay(pit);
+    Services::Delay delay(pitSystem);
 
-    LOG_DEBUG("DELAY OK");
+    LOG_INFO("DELAY OK");
 
     // =========================================================================
-    // FTM3 PWM
+    // DMA
     // =========================================================================
 
-    Drivers::FtmPwm ftmPwm(clock.getBusClock());
+    // Scatter-gather test buffers.
+    uint8_t srcA[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+    uint8_t srcB[8] = {10, 11, 12, 13, 14, 15, 16, 17};
+    uint8_t srcC[8] = {20, 21, 22, 23, 24, 25, 26, 27};
 
-    ftmPwm.init();
+    uint8_t dstA[8] = {};
+    uint8_t dstB[8] = {};
+    uint8_t dstC[8] = {};
 
-    LOG_DEBUG("FTM2 OK");
-    LOG_INFO("FTM2 CLOCK: %lu", ftmPwm.getClockHz());
+    Drivers::Dma::ScatterGatherDescriptor descriptorB{};
+    Drivers::Dma::ScatterGatherDescriptor descriptorC{};
+
+    Drivers::Dma dma0(Drivers::Dma::Channel::Channel0);
+    dma0.init();
+
+    const bool configuredA = dma0.configLinearTransfer(srcA, dstA, 1, 1, 8);
+
+    const bool configuredB =
+        dma0.configureScatterGatherDescriptor(descriptorB, srcB, dstB, 1, 1, 0, 0, 1, 8);
+
+    const bool configuredC =
+        dma0.configureScatterGatherDescriptor(descriptorC, srcC, dstC, 1, 1, 0, 0, 1, 8);
+
+    const bool linkedBC = dma0.linkScatterGatherDescriptors(descriptorB, descriptorC);
+
+    const bool linkedAB = dma0.configureScatterGather(descriptorB);
+
+    if (configuredA && configuredB && configuredC && linkedBC && linkedAB) {
+
+        uint32_t timeout = 1'000'000U;
+
+        while (dstC[7] != srcC[7] && !dma0.hasError() && timeout > 0U) {
+
+            dma0.start();
+            --timeout;
+        }
+    }
+
+    for (uint8_t i = 0; i < 8U; ++i) {
+        LOG_DEBUG("dstA[%d] = %d \t | \t dstB[%d] = %d \t | \t dstC[%d] = %d", i, dstA[i], i,
+                  dstB[i], i, dstC[i]);
+    }
+
+    LOG_INFO("DMA OK");
 
     // =========================================================================
     // Main loop
     // =========================================================================
 
+    // Start of the main loop
     gpio.LED_On(LedColor::Blue);
     for (volatile uint32_t i = 0; i < 5000000; i++) {
         __NOP();
@@ -108,26 +135,7 @@ int main() {
     gpio.LED_Off(LedColor::Blue);
 
     while (1) {
-        const uint16_t adcValue = adc.read();
-        const uint8_t dutyPercent = adc.toPercent(adcValue);
-
-        LOG_INFO("ADC=%u DUTY=%u%%", adcValue, dutyPercent);
-
-        ftmPwm.setDutyCycle(dutyPercent);
-
-        delay.waitMs(20);
-
-        // Test without ADC and a connected LED
-        // for (uint8_t duty = 0; duty <= 100; ++duty)
-        // {
-        //     ftmPwm.setDutyCycle(duty);
-        //     delay.waitMs(20);
-        // }
-
-        // for (int duty = 99; duty > 0; --duty)
-        // {
-        //     ftmPwm.setDutyCycle(static_cast<uint8_t>(duty));
-        //     delay.waitMs(20);
-        // }
+        // In reality, the CPU can sleep:
+        __WFI();
     }
 }

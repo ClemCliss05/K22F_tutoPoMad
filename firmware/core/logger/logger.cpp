@@ -4,6 +4,7 @@
 
 #include "logger.hpp"
 
+namespace Core {
 Logger *global_logger = nullptr;
 
 Logger::Logger(RingBuffer &buffer, ILoggerBackend &backend) : buffer_(buffer), backend_(backend) {
@@ -71,3 +72,5 @@ void Logger::flush() {
         backend_.write(c);
     }
 }
+
+} // namespace Core
